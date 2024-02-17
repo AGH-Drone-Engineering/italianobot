@@ -6,4 +6,6 @@
     <include file="$(find-pkg-share itabot)/launch/slam.launch.py">
         <arg name="use_sim_time" value="true" />
     </include>
+
+    <node name="aruco_detector" pkg="itabot_aruco" exec="detector" />
 </launch>
