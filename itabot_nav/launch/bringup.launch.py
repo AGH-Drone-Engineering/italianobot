@@ -21,7 +21,7 @@ def generate_launch_description():
     itabot_nav_dir = get_package_share_directory('itabot_nav')
     itabot_nav_launch_dir = os.path.join(itabot_nav_dir, 'launch')
 
-    params_file = os.path.join(itabot_nav_dir, 'config', 'navigation.yaml')
+    params_file = os.path.join(itabot_nav_dir, 'config', 'rosbot_autonomy.yaml')
     explore_lite_launch = os.path.join(
         get_package_share_directory('explore_lite'), 'launch', 'explore.launch.py'
     )
