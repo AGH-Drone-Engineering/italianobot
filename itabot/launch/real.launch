@@ -1,0 +1,7 @@
+<launch>
+    <node name="rviz" pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share itabot)/rviz/sim.rviz" output="screen" />
+
+    <include file="$(find-pkg-share itabot_nav)/launch/bringup.launch.py" />
+
+    <node name="aruco_detector" pkg="itabot_aruco" exec="detector" output="screen" />
+</launch>
