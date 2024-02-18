@@ -20,7 +20,7 @@ class ImageSubscriber(Node):
             cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
             # Rozpoznawanie markerów ArUco
-            aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_6X6_250)
+            aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_ARUCO_ORIGINAL)
             aruco_params = cv2.aruco.DetectorParameters_create()
             corners, ids, rejected = cv2.aruco.detectMarkers(cv_image, aruco_dict, parameters=aruco_params)
 
