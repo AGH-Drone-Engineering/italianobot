@@ -3,11 +3,7 @@
 
     <node name="rviz" pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share itabot)/rviz/sim.rviz" output="screen" />
 
-    <include file="$(find-pkg-share itabot)/launch/slam.launch.py">
-        <arg name="use_sim_time" value="true" />
-    </include>
-
-    <include file="$(find-pkg-share itabot)/launch/navigation.launch.py">
+    <include file="$(find-pkg-share itabot_nav)/launch/bringup.launch.py">
         <arg name="use_sim_time" value="true" />
     </include>
 

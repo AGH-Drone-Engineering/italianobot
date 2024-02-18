@@ -16,16 +16,21 @@ from nav2_common.launch import RewrittenYaml, ReplaceString
 
 def generate_launch_description():
     # Get the launch directory
-    bringup_dir = get_package_share_directory('nav2_bringup')
-    launch_dir = os.path.join(bringup_dir, 'launch')
+    nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+    nav2_bringup_launch_dir = os.path.join(nav2_bringup_dir, 'launch')
+
+    itabot_nav_dir = get_package_share_directory('itabot_nav')
+    itabot_nav_launch_dir = os.path.join(itabot_nav_dir, 'launch')
+
+    params_file = os.path.join(itabot_nav_dir, 'config', 'navigation.yaml')
 
     # Create the launch configuration variables
     namespace = LaunchConfiguration('namespace')
     use_namespace = LaunchConfiguration('use_namespace')
-    slam = LaunchConfiguration('slam')
-    map_yaml_file = LaunchConfiguration('map')
+    # slam = LaunchConfiguration('slam')
+    # map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
-    params_file = LaunchConfiguration('params_file')
+    # params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     use_composition = LaunchConfiguration('use_composition')
     use_respawn = LaunchConfiguration('use_respawn')
@@ -43,7 +48,8 @@ def generate_launch_description():
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file}
+        # 'yaml_filename': map_yaml_file,
+    }
 
     # Only it applys when `use_namespace` is True.
     # '<robot_namespace>' keyword shall be replaced by 'namespace' launch argument
@@ -75,24 +81,24 @@ def generate_launch_description():
         default_value='false',
         description='Whether to apply a namespace to the navigation stack')
 
-    declare_slam_cmd = DeclareLaunchArgument(
-        'slam',
-        default_value='False',
-        description='Whether run a SLAM')
+    # declare_slam_cmd = DeclareLaunchArgument(
+    #     'slam',
+    #     default_value='True',
+    #     description='Whether run a SLAM')
 
-    declare_map_yaml_cmd = DeclareLaunchArgument(
-        'map',
-        description='Full path to map yaml file to load')
+    # declare_map_yaml_cmd = DeclareLaunchArgument(
+    #     'map',
+    #     description='Full path to map yaml file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='false',
         description='Use simulation (Gazebo) clock if true')
 
-    declare_params_file_cmd = DeclareLaunchArgument(
-        'params_file',
-        default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
-        description='Full path to the ROS2 parameters file to use for all launched nodes')
+    # declare_params_file_cmd = DeclareLaunchArgument(
+    #     'params_file',
+    #     default_value=os.path.join(bringup_dir, 'params', 'nav2_params.yaml'),
+    #     description='Full path to the ROS2 parameters file to use for all launched nodes')
 
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
@@ -126,14 +132,13 @@ def generate_launch_description():
             remappings=remappings,
             output='screen'),
 
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource(os.path.join(launch_dir, 'slam_launch.py')),
-        #     condition=IfCondition(slam),
-        #     launch_arguments={'namespace': namespace,
-        #                       'use_sim_time': use_sim_time,
-        #                       'autostart': autostart,
-        #                       'use_respawn': use_respawn,
-        #                       'params_file': params_file}.items()),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(os.path.join(itabot_nav_launch_dir, 'slam.launch.py')),
+            launch_arguments={'namespace': namespace,
+                              'use_sim_time': use_sim_time,
+                              'autostart': autostart,
+                              'use_respawn': use_respawn,
+                              'params_file': params_file}.items()),
 
         # IncludeLaunchDescription(
         #     PythonLaunchDescriptionSource(os.path.join(launch_dir,
@@ -149,7 +154,7 @@ def generate_launch_description():
         #                       'container_name': 'nav2_container'}.items()),
 
         IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(os.path.join(launch_dir, 'navigation_launch.py')),
+            PythonLaunchDescriptionSource(os.path.join(nav2_bringup_launch_dir, 'navigation_launch.py')),
             launch_arguments={'namespace': namespace,
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,
@@ -168,10 +173,10 @@ def generate_launch_description():
     # Declare the launch options
     ld.add_action(declare_namespace_cmd)
     ld.add_action(declare_use_namespace_cmd)
-    ld.add_action(declare_slam_cmd)
-    ld.add_action(declare_map_yaml_cmd)
+    # ld.add_action(declare_slam_cmd)
+    # ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
-    ld.add_action(declare_params_file_cmd)
+    # ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_use_respawn_cmd)
