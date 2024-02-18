@@ -1,11 +1,15 @@
 <launch>
     <include file="$(find-pkg-share rosbot_gazebo)/launch/simulation.launch.py" />
 
-    <node name="rviz" pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share itabot)/rviz/sim.rviz" />
+    <node name="rviz" pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share itabot)/rviz/sim.rviz" output="screen" />
 
     <include file="$(find-pkg-share itabot)/launch/slam.launch.py">
         <arg name="use_sim_time" value="true" />
     </include>
 
-    <node name="aruco_detector" pkg="itabot_aruco" exec="detector" />
+    <include file="$(find-pkg-share itabot)/launch/navigation.launch.py">
+        <arg name="use_sim_time" value="true" />
+    </include>
+
+    <node name="aruco_detector" pkg="itabot_aruco" exec="detector" output="screen" />
 </launch>
