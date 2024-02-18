@@ -19,4 +19,5 @@
   <depend>slam_toolbox</depend>
   <depend>navigation2</depend>
   <depend>nav2_bringup</depend>
+  <depend>explore_lite</depend>
 </package>
