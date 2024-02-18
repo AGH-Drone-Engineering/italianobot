@@ -10,7 +10,7 @@ from launch.substitutions import LaunchConfiguration
 def generate_launch_description():
     itabot_dir = get_package_share_directory('itabot')
     nav2_bringup_launch_file_dir = os.path.join(
-        get_package_share_directory('nav2_bringup'), 'launch', 'bringup_launch.py'
+        get_package_share_directory('itabot'), 'launch', 'nav2_bringup.launch.py'
     )
 
     params_file = LaunchConfiguration('params_file')
