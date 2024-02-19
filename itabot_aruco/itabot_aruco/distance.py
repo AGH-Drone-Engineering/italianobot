@@ -116,7 +116,7 @@ class ArucoDetector(Node):
 
                         initpose.pose.pose.position.x = distance
                         initpose.pose.pose.position.y = -round(tVec[i][0][0], 1)
-                        initpose.pose.pose.positon.z = -round(tVec[i][0][1], 1)
+                        initpose.pose.pose.position.z = -round(tVec[i][0][1], 1)
                         initpose.pose.pose.orientation.w = 1
                         initpose.pose.pose.orientation.x = 0
                         initpose.pose.pose.orientation.y = 0
