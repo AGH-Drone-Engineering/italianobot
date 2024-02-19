@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.clock import Clock
 from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
@@ -7,6 +8,7 @@ from cv2 import aruco
 import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from std_msgs.msg import String
+from geometry_msgs.msg import PoseWithCovarianceStamped
 
 
 class ArucoDetector(Node):
@@ -31,6 +33,9 @@ class ArucoDetector(Node):
         # Z distance
 
         self.distance_pub = self.create_publisher(String, "/distance", 10)
+        self.position_pub = self.create_publisher(
+            PoseWithCovarianceStamped, "/aruco/pose", 10
+        )
 
         # Camera calibration:
         self.calib_data_path = "../calib_data/MultiMatrix.npz"
@@ -104,6 +109,20 @@ class ArucoDetector(Node):
                         message = String()
                         message.data = f"id: {ids[0]} Dist: {round(distance, 2)} x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)}"
                         self.distance_pub.publish(message)
+
+                        initpose = PoseWithCovarianceStamped()
+                        initpose.header.stamp = Clock().now()
+                        initpose.header.frame_id = "map"
+
+                        initpose.pose.pose.position.x = distance
+                        initpose.pose.pose.position.y = -round(tVec[i][0][0], 1)
+                        initpose.pose.pose.positon.z = -round(tVec[i][0][1], 1)
+                        initpose.pose.pose.orientation.w = 1
+                        initpose.pose.pose.orientation.x = 0
+                        initpose.pose.pose.orientation.y = 0
+                        initpose.pose.pose.orientation.z = 0
+                        self.position_pub.publish(initpose)
+
                     except:
                         self.get_logger().info("Publisher error")
 
