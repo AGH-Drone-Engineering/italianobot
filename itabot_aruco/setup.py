@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'detector = itabot_aruco.detector:main',
+	    'camera_capture = itabot_aruco.capture_calibration_images_ros2:main',
         ],
     },
 )
