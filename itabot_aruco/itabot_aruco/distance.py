@@ -6,6 +6,7 @@ import cv2
 from cv2 import aruco
 import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
+from std_msgs.msg import String
 
 
 class ArucoDetector(Node):
@@ -24,7 +25,15 @@ class ArucoDetector(Node):
             qos_profile,
         )
 
-        self.calib_data_path = "/home/husarion/ros2_ws/src/itabot_aruco/calib_data/MultiMatrix.npz"
+        # Creating aruco distance from rosbot publisher
+        # X [->] right direction on camera
+        # Y [V] down direction on camera
+        # Z distance
+
+        self.distance_pub = self.create_publisher(String, "/distance", 10)
+
+        # Camera calibration:
+        self.calib_data_path = "../calib_data/MultiMatrix.npz"
         self.calib_data = np.load(self.calib_data_path)
         self.cam_mat = self.calib_data["camMatrix"]
         self.dist_coef = self.calib_data["distCoef"]
@@ -91,6 +100,13 @@ class ArucoDetector(Node):
                         2,
                         cv2.LINE_AA,
                     )
+                    try:
+                        message = String()
+                        message.data = f"id: {ids[0]} Dist: {round(distance, 2)} x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)}"
+                        self.distance_pub.publish(message)
+                    except:
+                        self.get_logger().info("Publisher error")
+
             cv2.imshow("frame", frame)
             key = cv2.waitKey(1)
             if key == ord("q"):
