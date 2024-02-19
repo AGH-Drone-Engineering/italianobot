@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.clock import Clock
 from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import CameraInfo
 from cv_bridge import CvBridge, CvBridgeError
 import cv2
 from cv2 import aruco
@@ -13,18 +14,29 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 
 class ArucoDetector(Node):
     def __init__(self):
+
         super().__init__("aruco_detector")
+
         self.bridge = CvBridge()
+
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             history=HistoryPolicy.KEEP_LAST,
             depth=10,
         )
+
         self.image_sub = self.create_subscription(
             CompressedImage,
             "/camera/color/image_raw/compressed",
-            self.callback,
+            self.img_callback,
             qos_profile,
+        )
+
+        self.calib_sub = self.create_subscription(
+            CameraInfo,
+            "/camera/color/camera_info",
+            self.calib_callback,
+            10,
         )
 
         # Creating aruco distance from rosbot publisher
@@ -37,18 +49,28 @@ class ArucoDetector(Node):
             PoseWithCovarianceStamped, "/aruco/pose", 10
         )
 
-        # Camera calibration:
-        self.calib_data_path = "../calib_data/MultiMatrix.npz"
+        # Camera calibration from file:
+        """
+        # self.calib_data_path = "../calib_data/MultiMatrix.npz"
+        self.calib_data_path = "/home/husarion/ros2_ws/src/itabot_aruco/calib_data/MultiMatrix.npz"
         self.calib_data = np.load(self.calib_data_path)
         self.cam_mat = self.calib_data["camMatrix"]
         self.dist_coef = self.calib_data["distCoef"]
         self.r_vectors = self.calib_data["rVector"]
         self.t_vectors = self.calib_data["tVector"]
+	    """
+
         self.MARKER_SIZE = 10  # centimeters
         self.marker_dict = aruco.Dictionary_get(aruco.DICT_ARUCO_ORIGINAL)
         self.param_markers = aruco.DetectorParameters_create()
 
-    def callback(self, msg):
+    def calib_callback(self, msg):
+        self.cam_mat = np.array(msg.camMatrix).reshape((3, 3))
+        self.dist_coef = np.array(msg.distCoef)
+        self.r_vectors = np.array(msg.rVector)
+        self.t_vectors = np.array(msg.tVector)
+
+    def img_callback(self, msg):
         try:
             # Decode the compressed image
             np_arr = np.frombuffer(msg.data, np.uint8)
