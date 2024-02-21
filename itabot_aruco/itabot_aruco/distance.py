@@ -8,7 +8,7 @@ from cv2 import aruco
 import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped # PoseStamped ??????????
 
 
 class ArucoDetector(Node):
@@ -135,9 +135,9 @@ class ArucoDetector(Node):
                         message.data = f"id: {ids[0]} Dist: {round(distance, 2)} x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)}"
                         self.distance_pub.publish(message)
 
-                        aruco_position = PoseWithCovarianceStamped()
+                        aruco_position = PoseWithCovarianceStamped() # PoseStamped() ?????????
                         aruco_position.header.stamp = self.get_clock().now().to_msg()
-                        aruco_position.header.frame_id = "map"
+                        aruco_position.header.frame_id = "map" # "camera_orbbec_astra_link" ??????????? 
 
                         aruco_position.pose.pose.position.x = distance
                         aruco_position.pose.pose.position.y = -round(tVec[i][0][0], 1)
