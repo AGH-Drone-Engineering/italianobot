@@ -1,6 +1,5 @@
 import rclpy
 from rclpy.node import Node
-from rclpy.clock import Clock
 from sensor_msgs.msg import CompressedImage
 from sensor_msgs.msg import CameraInfo
 from cv_bridge import CvBridge, CvBridgeError
@@ -13,11 +12,13 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 
 
 class ArucoDetector(Node):
+
     def __init__(self):
 
         super().__init__("aruco_detector")
-
         self.bridge = CvBridge()
+
+        # Camera subscribers:
 
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -36,39 +37,40 @@ class ArucoDetector(Node):
             CameraInfo,
             "/camera/color/camera_info",
             self.calib_callback,
-            10,
+            qos_profile,
         )
 
-        # Creating aruco distance from rosbot publisher
-        # X [->] right direction on camera
-        # Y [V] down direction on camera
-        # Z distance
+        # Aruco position publishers:
 
         self.distance_pub = self.create_publisher(String, "/distance", 10)
         self.position_pub = self.create_publisher(
             PoseWithCovarianceStamped, "/aruco/pose", 10
         )
 
-        # Camera calibration from file:
-        """
-        # self.calib_data_path = "../calib_data/MultiMatrix.npz"
-        self.calib_data_path = "/home/husarion/ros2_ws/src/itabot_aruco/calib_data/MultiMatrix.npz"
-        self.calib_data = np.load(self.calib_data_path)
-        self.cam_mat = self.calib_data["camMatrix"]
-        self.dist_coef = self.calib_data["distCoef"]
-        self.r_vectors = self.calib_data["rVector"]
-        self.t_vectors = self.calib_data["tVector"]
-	    """
+        # Aruco code parameters:
 
         self.MARKER_SIZE = 10  # centimeters
         self.marker_dict = aruco.Dictionary_get(aruco.DICT_ARUCO_ORIGINAL)
         self.param_markers = aruco.DetectorParameters_create()
 
+        # Camera calibration from file:
+
+        """ # self.calib_data_path = "../calib_data/MultiMatrix.npz"
+        self.calib_data_path = (
+            "/home/husarion/ros2_ws/src/itabot_aruco/calib_data/MultiMatrix.npz"
+        )
+        self.calib_data = np.load(self.calib_data_path)
+        self.cam_mat = self.calib_data["camMatrix"]
+        self.dist_coef = self.calib_data["distCoef"]
+        # unnecessary:
+        # self.r_vectors = self.calib_data["rVector"]
+        # self.t_vectors = self.calib_data["tVector"] """
+
     def calib_callback(self, msg):
-        self.cam_mat = np.array(msg.camMatrix).reshape((3, 3))
-        self.dist_coef = np.array(msg.distCoef)
-        self.r_vectors = np.array(msg.rVector)
-        self.t_vectors = np.array(msg.tVector)
+        # Camera calibration from topic:
+
+        self.cam_mat = np.array(msg.k).reshape((3, 3))
+        self.dist_coef = np.array(msg.d)
 
     def img_callback(self, msg):
         try:
@@ -132,21 +134,21 @@ class ArucoDetector(Node):
                         message.data = f"id: {ids[0]} Dist: {round(distance, 2)} x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)}"
                         self.distance_pub.publish(message)
 
-                        initpose = PoseWithCovarianceStamped()
-                        initpose.header.stamp = Clock().now()
-                        initpose.header.frame_id = "map"
+                        aruco_position = PoseWithCovarianceStamped()
+                        aruco_position.header.stamp = self.get_clock().now().to_msg()
+                        aruco_position.header.frame_id = "map"
 
-                        initpose.pose.pose.position.x = distance
-                        initpose.pose.pose.position.y = -round(tVec[i][0][0], 1)
-                        initpose.pose.pose.position.z = -round(tVec[i][0][1], 1)
-                        initpose.pose.pose.orientation.w = 1
-                        initpose.pose.pose.orientation.x = 0
-                        initpose.pose.pose.orientation.y = 0
-                        initpose.pose.pose.orientation.z = 0
-                        self.position_pub.publish(initpose)
+                        aruco_position.pose.pose.position.x = distance
+                        aruco_position.pose.pose.position.y = -round(tVec[i][0][0], 1)
+                        aruco_position.pose.pose.position.z = -round(tVec[i][0][1], 1)
+                        aruco_position.pose.pose.orientation.w = 1.0
+                        aruco_position.pose.pose.orientation.x = 0.0
+                        aruco_position.pose.pose.orientation.y = 0.0
+                        aruco_position.pose.pose.orientation.z = 0.0
+                        self.position_pub.publish(aruco_position)
 
-                    except:
-                        self.get_logger().info("Publisher error")
+                    except Exception as e:
+                        self.get_logger().info(f"Publisher error: {e}")
 
             cv2.imshow("frame", frame)
             key = cv2.waitKey(1)
