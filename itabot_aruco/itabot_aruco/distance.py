@@ -35,7 +35,6 @@ class ArucoDetector(Node):
             qos_profile,
         )
 
-        # !!! QOS PROBLEM:
         self.calib_sub = self.create_subscription(
             CameraInfo,
             "/camera/color/camera_info",
