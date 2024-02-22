@@ -9,7 +9,9 @@ import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import TransformStamped
 import tf_transformations as tf_trans
+import tf2_ros
 
 
 class ArucoDetector(Node):
@@ -42,10 +44,15 @@ class ArucoDetector(Node):
         )
 
         # Aruco position publishers:
+
+        # pose with covariance:
         self.aruco_publishers = dict()
 
+        # tf broadcaster:
+        self.aruco_broadcaster = tf2_ros.TransformBroadcaster(self)
+
+        # do testow awaryjnie (potem do usuniecia):
         self.distance_pub = self.create_publisher(String, "/distance", 10)
-        # do testow awaryjnie (potem do usuniecia)
 
         # Aruco code parameters:
 
@@ -139,21 +146,6 @@ class ArucoDetector(Node):
                         message.data = f"id: {ids[0]} Dist: {round(distance, 2)} x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)}"
                         self.distance_pub.publish(message)"""
 
-                        if ids[0] not in self.aruco_publishers:
-                            self.aruco_publishers[ids[0]] = self.create_publisher(
-                                PoseWithCovarianceStamped, f"/aruco/pose/nr{ids[0]}", 10
-                            )
-
-                        self.position_pub = self.aruco_publishers[ids[0]]
-                        aruco_position = PoseWithCovarianceStamped()
-                        aruco_position.header.stamp = self.get_clock().now().to_msg()
-                        aruco_position.header.frame_id = "orbbec_astra_link"
-
-                        # if PoseStamp then aruco_position.pose.position/orientation (one pose less)
-                        aruco_position.pose.pose.position.x = tVec[i][0][0]
-                        aruco_position.pose.pose.position.y = tVec[i][0][1]
-                        aruco_position.pose.pose.position.z = tVec[i][0][2]
-
                         # Convert rotation vector to rotation matrix
                         rVec_matrix = tf_trans.rotation_matrix(
                             np.linalg.norm(rVec[i][0]),
@@ -163,12 +155,44 @@ class ArucoDetector(Node):
                         # Convert rotation matrix to quaternion
                         quaternion = tf_trans.quaternion_from_matrix(rVec_matrix)
 
+                        # PoseWithCovarianceStamped:
+                        if ids[0] not in self.aruco_publishers:
+                            self.aruco_publishers[ids[0]] = self.create_publisher(
+                                PoseWithCovarianceStamped, f"/aruco/pose/nr{ids[0]}", 10
+                            )
+
+                        aruco_position = PoseWithCovarianceStamped()
+                        aruco_position.header.stamp = self.get_clock().now().to_msg()
+                        aruco_position.header.frame_id = "orbbec_astra_link"
+                        self.position_pub = self.aruco_publishers[ids[0]]
+
+                        aruco_position.pose.pose.position.x = tVec[i][0][0]
+                        aruco_position.pose.pose.position.y = tVec[i][0][1]
+                        aruco_position.pose.pose.position.z = tVec[i][0][2]
+
                         aruco_position.pose.pose.orientation.w = quaternion[0]
                         aruco_position.pose.pose.orientation.x = quaternion[1]
                         aruco_position.pose.pose.orientation.y = quaternion[2]
                         aruco_position.pose.pose.orientation.z = quaternion[3]
 
                         self.position_pub.publish(aruco_position)
+
+                        # TF_broadcast:
+                        aruco_ekf = TransformStamped()
+                        aruco_ekf.header.stamp = self.get_clock().now().to_msg()
+                        aruco_ekf.header.frame_id = "orbbec_astra_link"
+                        aruco_ekf.child_frame_id = f"aruco_marker_{ids[0]}"
+
+                        aruco_ekf.transform.translation.x = tVec[i][0][0]
+                        aruco_ekf.transform.translation.y = tVec[i][0][1]
+                        aruco_ekf.transform.translation.z = tVec[i][0][2]
+
+                        aruco_ekf.transform.rotation.w = quaternion[0]
+                        aruco_ekf.transform.rotation.x = quaternion[1]
+                        aruco_ekf.transform.rotation.y = quaternion[2]
+                        aruco_ekf.transform.rotation.z = quaternion[3]
+
+                        self.aruco_broadcaster.sendTransform(aruco_ekf)
 
                     except Exception as e:
                         self.get_logger().info(f"Publisher error: {e}")
