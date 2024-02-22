@@ -43,9 +43,10 @@ class ArucoDetector(Node):
         )
 
         # Aruco position publishers:
+        self.aruco_publishers = dict()
 
         self.distance_pub = self.create_publisher(String, "/distance", 10)
-        self.position_pub = self.create_publisher(PoseStamped, "/aruco/pose", 10)
+        # do testow awaryjnie (potem do usuniecia)
 
         # Aruco code parameters:
 
@@ -130,10 +131,17 @@ class ArucoDetector(Node):
                         cv2.LINE_AA,
                     )
                     try:
-                        message = String()
+                        # message do testow tylko
+                        """message = String()
                         message.data = f"id: {ids[0]} Dist: {round(distance, 2)} x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)}"
-                        self.distance_pub.publish(message)
+                        self.distance_pub.publish(message)"""
 
+                        if ids[0] not in self.aruco_publishers:
+                            self.aruco_publishers[ids[0]] = self.create_publisher(
+                                PoseStamped, f"/aruco/pose/nr{ids[0]}", 10
+                            )
+
+                        self.position_pub = self.aruco_publishers[ids[0]]
                         aruco_position = PoseStamped()
                         aruco_position.header.stamp = self.get_clock().now().to_msg()
                         aruco_position.header.frame_id = "orbbec_astra_link"
