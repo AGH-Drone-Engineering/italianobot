@@ -9,9 +9,7 @@ import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseWithCovarianceStamped
-
-# from geometry_msgs.msg import PoseStamped
-import tf.transformations as tf_trans
+import tf_transformations as tf_trans
 
 
 class ArucoDetector(Node):
@@ -51,7 +49,11 @@ class ArucoDetector(Node):
 
         # Aruco code parameters:
 
-        self.MARKER_SIZE = 10  # centimeters
+        self.ARUCO_CODE_SIZE_CM = 10  # centimeters
+        self.MARKER_SIZE = (
+            self.ARUCO_CODE_SIZE_CM / 100
+        )  # tVec unit is meters so conversion is necessary
+
         self.marker_dict = aruco.Dictionary_get(aruco.DICT_ARUCO_ORIGINAL)
         self.param_markers = aruco.DetectorParameters_create()
 
@@ -152,16 +154,19 @@ class ArucoDetector(Node):
                         aruco_position.pose.pose.position.y = tVec[i][0][1]
                         aruco_position.pose.pose.position.z = tVec[i][0][2]
 
+                        # Convert rotation vector to rotation matrix
                         rVec_matrix = tf_trans.rotation_matrix(
                             np.linalg.norm(rVec[i][0]),
                             rVec[i][0] / np.linalg.norm(rVec[i][0]),
                         )
-                        quaterion = tf_trans.quaternion_from_matrix(rVec_matrix)
 
-                        aruco_position.pose.pose.orientation.w = quaterion[0]
-                        aruco_position.pose.pose.orientation.x = quaterion[1]
-                        aruco_position.pose.pose.orientation.y = quaterion[2]
-                        aruco_position.pose.pose.orientation.z = quaterion[3]
+                        # Convert rotation matrix to quaternion
+                        quaternion = tf_trans.quaternion_from_matrix(rVec_matrix)
+
+                        aruco_position.pose.pose.orientation.w = quaternion[0]
+                        aruco_position.pose.pose.orientation.x = quaternion[1]
+                        aruco_position.pose.pose.orientation.y = quaternion[2]
+                        aruco_position.pose.pose.orientation.z = quaternion[3]
 
                         self.position_pub.publish(aruco_position)
 

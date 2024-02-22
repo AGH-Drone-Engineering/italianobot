@@ -8,7 +8,8 @@ from cv2 import aruco
 import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseWithCovarianceStamped  # PoseStamped ??????????
+from geometry_msgs.msg import PoseWithCovarianceStamped
+import tf_transformations as tf_trans
 
 
 class ArucoDetector(Node):
@@ -33,7 +34,6 @@ class ArucoDetector(Node):
             qos_profile,
         )
 
-        # !!! QOS PROBLEM:
         self.calib_sub = self.create_subscription(
             CameraInfo,
             "/camera/color/camera_info",
@@ -42,30 +42,16 @@ class ArucoDetector(Node):
         )
 
         # Aruco position publishers:
+        self.aruco_publishers = dict()
 
         self.distance_pub = self.create_publisher(String, "/distance", 10)
-        self.position_pub = self.create_publisher(
-            PoseWithCovarianceStamped, "/aruco/pose", 10
-        )
+        # do testow awaryjnie (potem do usuniecia)
 
         # Aruco code parameters:
 
         self.MARKER_SIZE = 10  # centimeters
         self.marker_dict = aruco.Dictionary_get(aruco.DICT_ARUCO_ORIGINAL)
         self.param_markers = aruco.DetectorParameters_create()
-
-        # Camera calibration from file:
-
-        """ # self.calib_data_path = "../calib_data/MultiMatrix.npz"
-        self.calib_data_path = (
-            "/home/husarion/ros2_ws/src/itabot_aruco/calib_data/MultiMatrix.npz"
-        )
-        self.calib_data = np.load(self.calib_data_path)
-        self.cam_mat = self.calib_data["camMatrix"]
-        self.dist_coef = self.calib_data["distCoef"]
-        # unnecessary:
-        # self.r_vectors = self.calib_data["rVector"]
-        # self.t_vectors = self.calib_data["tVector"] """
 
     def calib_callback(self, msg):
         # Camera calibration from topic:
@@ -75,9 +61,9 @@ class ArucoDetector(Node):
 
     def img_callback(self, msg):
         try:
-            # Decode the compressed image
-            np_arr = np.frombuffer(msg.data, np.uint8)
-            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+            frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             marker_corners, marker_IDs, reject = aruco.detectMarkers(
                 gray_frame, self.marker_dict, parameters=self.param_markers
@@ -130,25 +116,40 @@ class ArucoDetector(Node):
                         cv2.LINE_AA,
                     )
                     try:
-                        message = String()
+                        # message do testow tylko
+                        """message = String()
                         message.data = f"id: {ids[0]} Dist: {round(distance, 2)} x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)}"
-                        self.distance_pub.publish(message)
+                        self.distance_pub.publish(message)"""
 
-                        aruco_position = (
-                            PoseWithCovarianceStamped()
-                        )  # PoseStamped() ?????????
+                        if ids[0] not in self.aruco_publishers:
+                            self.aruco_publishers[ids[0]] = self.create_publisher(
+                                PoseWithCovarianceStamped, f"/aruco/pose/nr{ids[0]}", 10
+                            )
+
+                        self.position_pub = self.aruco_publishers[ids[0]]
+                        aruco_position = PoseWithCovarianceStamped()
                         aruco_position.header.stamp = self.get_clock().now().to_msg()
-                        aruco_position.header.frame_id = (
-                            "map"  # "camera_orbbec_astra_link" ???????????
+                        aruco_position.header.frame_id = "orbbec_astra_link"
+
+                        # if PoseStamp then aruco_position.pose.position/orientation (one pose less)
+                        aruco_position.pose.pose.position.x = tVec[i][0][0]
+                        aruco_position.pose.pose.position.y = tVec[i][0][1]
+                        aruco_position.pose.pose.position.z = tVec[i][0][2]
+
+                        # Convert rotation vector to rotation matrix
+                        rVec_matrix = tf_trans.rotation_matrix(
+                            np.linalg.norm(rVec[i][0]),
+                            rVec[i][0] / np.linalg.norm(rVec[i][0]),
                         )
 
-                        aruco_position.pose.pose.position.x = distance
-                        aruco_position.pose.pose.position.y = -round(tVec[i][0][0], 1)
-                        aruco_position.pose.pose.position.z = -round(tVec[i][0][1], 1)
-                        aruco_position.pose.pose.orientation.w = 1.0
-                        aruco_position.pose.pose.orientation.x = 0.0
-                        aruco_position.pose.pose.orientation.y = 0.0
-                        aruco_position.pose.pose.orientation.z = 0.0
+                        # Convert rotation matrix to quaternion
+                        quaternion = tf_trans.quaternion_from_matrix(rVec_matrix)
+
+                        aruco_position.pose.pose.orientation.w = quaternion[0]
+                        aruco_position.pose.pose.orientation.x = quaternion[1]
+                        aruco_position.pose.pose.orientation.y = quaternion[2]
+                        aruco_position.pose.pose.orientation.z = quaternion[3]
+
                         self.position_pub.publish(aruco_position)
 
                     except Exception as e:
