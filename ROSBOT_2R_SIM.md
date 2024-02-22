@@ -7,7 +7,7 @@ If you change the path check if it is free to use (doesn't exist). If it does, t
 export MYPATH=~ # use the default or change to your own
 
 # Check if the path exists if you changed it to your own 
-if [ -e "$MYPATH" ]; then echo -e "\e[31mPath exists\e[0m"; else echo -e "\e[32mPath does not exist, go ahead with the rest of the instructions. \e[0m"; fi
+if [ -e "$MYPATH" ]; then echo -e "\e[32mPath exists, go ahead with the rest of the instructions.\e[0m"; else echo -e "\e[31mPath does not exist, provide an existing path. \e[0m"; fi
 
 ```
 
