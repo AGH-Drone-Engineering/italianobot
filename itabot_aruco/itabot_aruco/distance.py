@@ -137,7 +137,7 @@ class ArucoDetector(Node):
 
                         aruco_position = PoseStamped()
                         aruco_position.header.stamp = self.get_clock().now().to_msg()
-                        aruco_position.header.frame_id = "camera_orbbec_astra_link"
+                        aruco_position.header.frame_id = "orbbec_astra_link"
 
                         aruco_position.pose.position.x = distance
                         aruco_position.pose.position.y = -round(tVec[i][0][0], 1)
