@@ -7,5 +7,5 @@
         <arg name="use_sim_time" value="true" />
     </include>
 
-    <node name="aruco_detector" pkg="itabot_aruco" exec="distance" output="screen" />
+    <node name="aruco_detector" pkg="itabot_aruco" exec="distance_sim" output="screen" />
 </launch>
