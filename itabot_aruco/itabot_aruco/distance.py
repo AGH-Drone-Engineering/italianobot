@@ -9,9 +9,8 @@ import numpy as np
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseWithCovarianceStamped
-
 # from geometry_msgs.msg import PoseStamped
-
+import tf.transformations as tf_trans
 
 class ArucoDetector(Node):
 
@@ -147,13 +146,19 @@ class ArucoDetector(Node):
                         aruco_position.header.frame_id = "orbbec_astra_link"
 
                         # if PoseStamp then aruco_position.pose.position/orientation (one pose less)
-                        aruco_position.pose.pose.position.x = distance
-                        aruco_position.pose.pose.position.y = -round(tVec[i][0][0], 1)
-                        aruco_position.pose.pose.position.z = -round(tVec[i][0][1], 1)
-                        aruco_position.pose.pose.orientation.w = 1.0
-                        aruco_position.pose.pose.orientation.x = 0.0
-                        aruco_position.pose.pose.orientation.y = 0.0
-                        aruco_position.pose.pose.orientation.z = 0.0
+                        aruco_position.pose.pose.position.x = tVec[i][0][0]
+                        aruco_position.pose.pose.position.y = tVec[i][0][1]
+                        aruco_position.pose.pose.position.z = tVec[i][0][2]
+
+                        
+                        rVec_matrix = tf_trans.rotation_matrix(np.linalg.norm(rVec[i][0]), rVec[i][0]/np.linalg.norm(rVec[i][0]))
+                        quaternion = tf_trans.quaternion_from_matrix(rVec_matrix)
+                        
+                        aruco_position.pose.pose.orientation.w = quaterion[0]
+                        aruco_position.pose.pose.orientation.x = quaterion[1]
+                        aruco_position.pose.pose.orientation.y = quaterion[2]
+                        aruco_position.pose.pose.orientation.z = quaterion[3]
+                        
                         self.position_pub.publish(aruco_position)
 
                     except Exception as e:
