@@ -3,5 +3,5 @@
 
     <include file="$(find-pkg-share itabot_nav)/launch/bringup.launch.py" />
 
-    <node name="aruco_detector" pkg="itabot_aruco" exec="detector" output="screen" />
+    <node name="aruco_detector" pkg="itabot_aruco" exec="distance" output="screen" />
 </launch>
