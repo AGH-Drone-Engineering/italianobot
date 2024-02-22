@@ -139,13 +139,13 @@ class ArucoDetector(Node):
                         aruco_position.header.stamp = self.get_clock().now().to_msg()
                         aruco_position.header.frame_id = "camera_orbbec_astra_link"
 
-                        aruco_position.pose.pose.position.x = distance
-                        aruco_position.pose.pose.position.y = -round(tVec[i][0][0], 1)
-                        aruco_position.pose.pose.position.z = -round(tVec[i][0][1], 1)
-                        aruco_position.pose.pose.orientation.w = 1.0
-                        aruco_position.pose.pose.orientation.x = 0.0
-                        aruco_position.pose.pose.orientation.y = 0.0
-                        aruco_position.pose.pose.orientation.z = 0.0
+                        aruco_position.pose.position.x = distance
+                        aruco_position.pose.position.y = -round(tVec[i][0][0], 1)
+                        aruco_position.pose.position.z = -round(tVec[i][0][1], 1)
+                        aruco_position.pose.orientation.w = 1.0
+                        aruco_position.pose.orientation.x = 0.0
+                        aruco_position.pose.orientation.y = 0.0
+                        aruco_position.pose.orientation.z = 0.0
                         self.position_pub.publish(aruco_position)
 
                     except Exception as e:
