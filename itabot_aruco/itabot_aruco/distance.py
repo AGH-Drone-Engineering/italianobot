@@ -97,8 +97,10 @@ class ArucoDetector(Node):
                 rVec, tVec, _ = aruco.estimatePoseSingleMarkers(
                     marker_corners, self.MARKER_SIZE, self.cam_mat, self.dist_coef
                 )
+
                 total_markers = range(0, marker_IDs.size)
                 for ids, corners, i in zip(marker_IDs, marker_corners, total_markers):
+
                     cv2.polylines(
                         frame,
                         [corners.astype(np.int32)],
@@ -117,8 +119,15 @@ class ArucoDetector(Node):
                     distance = np.sqrt(
                         tVec[i][0][2] ** 2 + tVec[i][0][0] ** 2 + tVec[i][0][1] ** 2
                     )
+
                     point = cv2.drawFrameAxes(
-                        frame, self.cam_mat, self.dist_coef, rVec[i], tVec[i], 4, 4
+                        frame,
+                        self.cam_mat,
+                        self.dist_coef,
+                        rVec[i],
+                        tVec[i],
+                        4 / 100,
+                        4,
                     )
                     cv2.putText(
                         frame,
@@ -166,9 +175,9 @@ class ArucoDetector(Node):
                         aruco_position.header.frame_id = "orbbec_astra_link"
                         self.position_pub = self.aruco_publishers[ids[0]]
 
-                        aruco_position.pose.pose.position.x = tVec[i][0][0]
-                        aruco_position.pose.pose.position.y = tVec[i][0][1]
-                        aruco_position.pose.pose.position.z = tVec[i][0][2]
+                        aruco_position.pose.pose.position.x = tVec[i][0][2]
+                        aruco_position.pose.pose.position.y = -tVec[i][0][0]
+                        aruco_position.pose.pose.position.z = -tVec[i][0][1]
 
                         aruco_position.pose.pose.orientation.w = quaternion[0]
                         aruco_position.pose.pose.orientation.x = quaternion[1]
@@ -183,9 +192,9 @@ class ArucoDetector(Node):
                         aruco_ekf.header.frame_id = "orbbec_astra_link"
                         aruco_ekf.child_frame_id = f"aruco_marker_{ids[0]}"
 
-                        aruco_ekf.transform.translation.x = tVec[i][0][0]
-                        aruco_ekf.transform.translation.y = tVec[i][0][1]
-                        aruco_ekf.transform.translation.z = tVec[i][0][2]
+                        aruco_ekf.transform.translation.x = tVec[i][0][2]
+                        aruco_ekf.transform.translation.y = -tVec[i][0][0]
+                        aruco_ekf.transform.translation.z = -tVec[i][0][1]
 
                         aruco_ekf.transform.rotation.w = quaternion[0]
                         aruco_ekf.transform.rotation.x = quaternion[1]
