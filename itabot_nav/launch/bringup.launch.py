@@ -22,6 +22,7 @@ def generate_launch_description():
     itabot_nav_launch_dir = os.path.join(itabot_nav_dir, 'launch')
 
     params_file = os.path.join(itabot_nav_dir, 'config', 'rosbot_autonomy.yaml')
+    
     explore_lite_launch = os.path.join(
         get_package_share_directory('explore_lite'), 'launch', 'explore.launch.py'
     )
@@ -94,10 +95,10 @@ def generate_launch_description():
                               'use_respawn': use_respawn,
                               'container_name': 'nav2_container'}.items()),
 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(explore_lite_launch),
-            launch_arguments={'use_sim_time': use_sim_time,
-                              'params_file': params_file}.items()),
+#        IncludeLaunchDescription(
+#            PythonLaunchDescriptionSource(explore_lite_launch),
+#            launch_arguments={'use_sim_time': use_sim_time,
+#                              'params_file': params_file}.items()),
     ])
 
 

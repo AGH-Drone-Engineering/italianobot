@@ -23,6 +23,7 @@ setup(
             "camera_capture = itabot_aruco.capture_calibration_images_ros2:main",
             "distance = itabot_aruco.distance:main",
             "distance_sim = itabot_aruco.distance_sim:main",
+            "minimal_publisher = itabot_aruco.minimal_publisher:main",
         ],
     },
 )
