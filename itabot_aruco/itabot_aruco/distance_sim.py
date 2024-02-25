@@ -67,7 +67,7 @@ class ArucoDetector(Node):
         self.dist_coef = np.array(msg.d)
 
     def rviz2_axes(self, rVec, i):
-        R, _ = cv.Rodrigues(rVec[i][0])
+        R, _ = cv2.Rodrigues(rVec[i][0])
         R_y = np.array(
             [
                 [np.cos(np.pi / 2), 0, np.sin(np.pi / 2)],
@@ -84,7 +84,7 @@ class ArucoDetector(Node):
         )
         R_rotated = np.dot(R, R_y)
         R_rotated = np.dot(R_rotated, R_x)
-        rVec_rotated, _ = cv.Rodrigues(R_rotated)
+        rVec_rotated, _ = cv2.Rodrigues(R_rotated)
         rVec[i] = rVec_rotated.T
     
     def img_callback(self, msg):
