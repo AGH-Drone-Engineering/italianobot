@@ -66,7 +66,7 @@ class ArucoDetector(Node):
         self.cam_mat = np.array(msg.k).reshape((3, 3))
         self.dist_coef = np.array(msg.d)
 
-    def rviz2_axes(rVec, i):
+    def rviz2_axes(self, rVec, i):
         R, _ = cv.Rodrigues(rVec[i][0])
         R_y = np.array(
             [
