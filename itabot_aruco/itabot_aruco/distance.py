@@ -83,6 +83,27 @@ class ArucoDetector(Node):
         self.cam_mat = np.array(msg.k).reshape((3, 3))
         self.dist_coef = np.array(msg.d)
 
+    def rviz2_axes(rVec, i):
+        R, _ = cv.Rodrigues(rVec[i][0])
+        R_y = np.array(
+            [
+                [np.cos(np.pi / 2), 0, np.sin(np.pi / 2)],
+                [0, 1, 0],
+                [-np.sin(np.pi / 2), 0, np.cos(np.pi / 2)],
+            ]
+        )
+        R_x = np.array(
+            [
+                [1, 0, 0],
+                [0, np.cos(-np.pi / 2), -np.sin(-np.pi / 2)],
+                [0, np.sin(-np.pi / 2), np.cos(-np.pi / 2)],
+            ]
+        )
+        R_rotated = np.dot(R, R_y)
+        R_rotated = np.dot(R_rotated, R_x)
+        rVec_rotated, _ = cv.Rodrigues(R_rotated)
+        rVec[i] = rVec_rotated.T
+    
     def img_callback(self, msg):
         try:
             # Decode the compressed image
@@ -101,6 +122,10 @@ class ArucoDetector(Node):
                 total_markers = range(0, marker_IDs.size)
                 for ids, corners, i in zip(marker_IDs, marker_corners, total_markers):
 
+                    # DO SPRAWDZENIA CZY W RVIZ NIE ODWRÓCIŁO UKŁ. WSP.
+                    # Jak tak to: rVec2 = rVec -> rviz2_axes(rVec2, i) -> point(... rVec2...)
+                    self.rviz2_axes(rVec, i)
+                    
                     cv2.polylines(
                         frame,
                         [corners.astype(np.int32)],
@@ -131,7 +156,7 @@ class ArucoDetector(Node):
                     )
                     cv2.putText(
                         frame,
-                        f"id: {ids[0]} Dist: {round(distance, 2)}",
+                        f"x:{round(tVec[i][0][2],1)} y:{round(-tVec[i][0][0],1)} z: {round(-tVec[i][0][1],1)} ",
                         tuple(top_right),
                         cv2.FONT_HERSHEY_PLAIN,
                         1.3,
