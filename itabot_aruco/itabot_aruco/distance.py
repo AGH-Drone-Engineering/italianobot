@@ -103,7 +103,7 @@ class ArucoDetector(Node):
         R_rotated = np.dot(R_rotated, R_x)
         rVec_rotated, _ = cv2.Rodrigues(R_rotated)
         rVec[i] = rVec_rotated.T
-    
+
     def img_callback(self, msg):
         try:
             # Decode the compressed image
@@ -122,10 +122,9 @@ class ArucoDetector(Node):
                 total_markers = range(0, marker_IDs.size)
                 for ids, corners, i in zip(marker_IDs, marker_corners, total_markers):
 
-                    # DO SPRAWDZENIA CZY W RVIZ NIE ODWRÓCIŁO UKŁ. WSP.
-                    # Jak tak to: rVec2 = rVec -> rviz2_axes(rVec2, i) -> point(... rVec2...)
-                    self.rviz2_axes(rVec, i)
-                    
+                    rVec2 = rVec.copy()
+                    self.rviz2_axes(rVec2, i)
+
                     cv2.polylines(
                         frame,
                         [corners.astype(np.int32)],
@@ -149,7 +148,7 @@ class ArucoDetector(Node):
                         frame,
                         self.cam_mat,
                         self.dist_coef,
-                        rVec[i],
+                        rVec2[i],
                         tVec[i],
                         4 / 100,
                         4,
