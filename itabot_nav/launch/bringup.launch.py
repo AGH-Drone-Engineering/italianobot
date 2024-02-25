@@ -95,10 +95,10 @@ def generate_launch_description():
                               'use_respawn': use_respawn,
                               'container_name': 'nav2_container'}.items()),
 
-#        IncludeLaunchDescription(
-#            PythonLaunchDescriptionSource(explore_lite_launch),
-#            launch_arguments={'use_sim_time': use_sim_time,
-#                              'params_file': params_file}.items()),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(explore_lite_launch),
+            launch_arguments={'use_sim_time': use_sim_time,
+                              'params_file': params_file}.items()),
     ])
 
 
