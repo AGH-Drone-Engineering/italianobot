@@ -3,9 +3,6 @@ from PIL import Image
 import yaml
 import os
 
-MARGIN = 10  # minimal spacing between points
-WALL_DET = 5  # minimal spacing between rosbot and wall
-
 
 def load_map_data(yaml_file):
     with open(yaml_file, "r") as file:
@@ -13,39 +10,58 @@ def load_map_data(yaml_file):
     return map_data
 
 
-def calculate_goal_points(map_file, resolution, init_pose):
+def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
     img = Image.open(map_file)
     img_array = np.array(img)
-    out_put_img_array = (
-        img_array.copy()
-    )  # matrix to prepare visualization of the goal points
+    """ # matrix to prepare visualization of the goal points
+    out_put_img_array = img_array.copy() """
     goal_points = []
     height, width = img_array.shape
     for y in range(1, height - 1):
         for x in range(1, width - 1):
             if np.all(
-                img_array[y - WALL_DET : y + WALL_DET, x - WALL_DET : x + WALL_DET]
+                img_array[
+                    y - WALL_DET : y + WALL_DET + 1, x - WALL_DET : x + WALL_DET + 1
+                ]
                 == 254
             ):
                 # free space between points:
                 if len(goal_points) == 0 or all(
-                    np.abs(gp[0] - x * resolution - init_pose[0]) > MARGIN * resolution
-                    or np.abs(gp[1] - y * resolution - init_pose[1])
+                    np.abs(gp["px"] - x * resolution - init_pose[0])
+                    > MARGIN * resolution
+                    or np.abs(gp["py"] - y * resolution - init_pose[1])
                     > MARGIN * resolution
                     for gp in goal_points[-width // MARGIN :]
                 ):
 
                     real_x = x * resolution + init_pose[0]
                     real_y = y * resolution + init_pose[1]
-                    goal_points.append((real_x, real_y))
+                    rotation = [
+                        {"ow": 1.0, "ox": 0.0, "oy": 0.0, "oz": 0.0},
+                        {"ow": 0.7, "ox": 0.0, "oy": 0.0, "oz": -0.7},
+                        {"ow": 0.0, "ox": 0.0, "oy": 0.0, "oz": 1.0},
+                        {"ow": 0.7, "ox": 0.0, "oy": 0.0, "oz": 0.7},
+                    ]
+                    for i in range(len(rotation)):
+                        goal_points.append(
+                            {
+                                "px": real_x,
+                                "py": real_y,
+                                "pz": 0.0,
+                                "ow": rotation[i]["ow"],
+                                "ox": rotation[i]["ox"],
+                                "oy": rotation[i]["oy"],
+                                "oz": rotation[i]["oz"],
+                            }
+                        )
 
-                    # Saving map with goal points
+                    """ # Saving map with goal points
                     # Only for testing the algorithm
-                    out_put_img_array[y][x] = 50
+                    out_put_img_array[y][x] = 150
                     im = Image.fromarray(out_put_img_array)
                     directory = os.path.dirname(map_file)
                     points_file = os.path.join(directory, "points.pgm")
-                    im.save(points_file)
+                    im.save(points_file) """
 
     return goal_points
 
@@ -60,4 +76,6 @@ map_file = os.path.join(
 map_data = load_map_data(yaml_file)
 resolution = map_data["resolution"]
 init_pose = map_data["origin"][:2]
-goal_points = calculate_goal_points(map_file, resolution, init_pose)
+MARGIN = 20  # minimal spacing between points
+WALL_DET = 5  # minimal spacing between rosbot and wall
+goal_points = calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET)
