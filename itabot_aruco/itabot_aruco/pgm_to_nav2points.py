@@ -13,8 +13,10 @@ def load_map_data(yaml_file):
 def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
     img = Image.open(map_file)
     img_array = np.array(img)
-    """ # matrix to prepare visualization of the goal points
-    out_put_img_array = img_array.copy() """
+    """ 
+    # matrix to prepare visualization of the goal points
+    out_put_img_array = img_array.copy()
+    """
     goal_points = []
     height, width = img_array.shape
     for y in range(1, height - 1):
@@ -31,7 +33,7 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                     > MARGIN * resolution
                     or np.abs(gp["py"] - y * resolution - init_pose[1])
                     > MARGIN * resolution
-                    for gp in goal_points[-width // MARGIN :]
+                    for gp in goal_points[-4 * width // MARGIN :]
                 ):
 
                     real_x = x * resolution + init_pose[0]
@@ -42,6 +44,7 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                         {"ow": 0.0, "ox": 0.0, "oy": 0.0, "oz": 1.0},
                         {"ow": 0.7, "ox": 0.0, "oy": 0.0, "oz": 0.7},
                     ]
+
                     for i in range(len(rotation)):
                         goal_points.append(
                             {
@@ -54,15 +57,15 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                                 "oz": rotation[i]["oz"],
                             }
                         )
-
-                    """ # Saving map with goal points
+    """ 
+                    # Saving map with goal points
                     # Only for testing the algorithm
                     out_put_img_array[y][x] = 150
-                    im = Image.fromarray(out_put_img_array)
-                    directory = os.path.dirname(map_file)
-                    points_file = os.path.join(directory, "points.pgm")
-                    im.save(points_file) """
-
+    im = Image.fromarray(out_put_img_array)
+    directory = os.path.dirname(map_file)
+    points_file = os.path.join(directory, "points.pgm")
+    im.save(points_file)
+    """
     return goal_points
 
 
