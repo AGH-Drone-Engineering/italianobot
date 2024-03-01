@@ -133,7 +133,7 @@ class GoalPublisher(Node):
             self.get_logger().info("Could not transform odom to base_link: %s" % str(e))
 
         # changing i to i+ if goal reached
-        margin = 1
+        margin = 0.5
         try:
             if (
                 self.different(

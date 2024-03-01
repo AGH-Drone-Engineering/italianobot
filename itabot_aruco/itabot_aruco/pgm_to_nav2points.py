@@ -13,14 +13,14 @@ def load_map_data(yaml_file):
 def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
     img = Image.open(map_file)
     img_array = np.array(img)
-    """ 
+
     # matrix to prepare visualization of the goal points
     out_put_img_array = img_array.copy()
-    """
+
     goal_points = []
     height, width = img_array.shape
-    for y in range(1, height - 1):
-        for x in range(1, width - 1):
+    for y in range(WALL_DET, height - 2):
+        for x in range(WALL_DET, width - 2):
             if np.all(
                 img_array[
                     y - WALL_DET : y + WALL_DET + 1, x - WALL_DET : x + WALL_DET + 1
@@ -57,7 +57,7 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                                 "oz": rotation[i]["oz"],
                             }
                         )
-    """ 
+
                     # Saving map with goal points
                     # Only for testing the algorithm
                     out_put_img_array[y][x] = 150
@@ -65,7 +65,7 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
     directory = os.path.dirname(map_file)
     points_file = os.path.join(directory, "points.pgm")
     im.save(points_file)
-    """
+
     return goal_points
 
 
