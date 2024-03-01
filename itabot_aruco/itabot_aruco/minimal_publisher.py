@@ -26,7 +26,7 @@ class GoalPublisher(Node):
         map_data = nav2p.load_map_data(yaml_file)
         resolution = map_data["resolution"]
         init_pose = map_data["origin"][:2]
-        MARGIN = 20  # minimal spacing between points
+        MARGIN = 50  # minimal spacing between points
         WALL_DET = 5  # minimal spacing between rosbot and wall
         self.points = nav2p.calculate_goal_points(
             map_file, resolution, init_pose, MARGIN, WALL_DET

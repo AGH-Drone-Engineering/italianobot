@@ -57,7 +57,7 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                                 "oz": rotation[i]["oz"],
                             }
                         )
-
+                    print(real_x, real_y)
                     # Saving map with goal points
                     # Only for testing the algorithm
                     out_put_img_array[y][x] = 150
