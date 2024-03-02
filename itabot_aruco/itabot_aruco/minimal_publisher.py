@@ -1,3 +1,9 @@
+# ros2 run nav2_map_server map_saver_cli -f my_map
+# Do wywołania po 5 minutach po explorer
+
+# potem po (20s?) zapisywania
+# minimal publisher
+
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
