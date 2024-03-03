@@ -13,6 +13,7 @@ from tf2_ros import LookupException, ConnectivityException, ExtrapolationExcepti
 import sys
 import os
 
+
 home_dir = os.environ["HOME"]
 pgm_file = os.path.join(home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco")
 sys.path.insert(0, pgm_file)
@@ -22,6 +23,11 @@ import pgm_to_nav2points as nav2p
 class GoalPublisher(Node):
 
     def __init__(self):
+        try:
+            os.system("pkill -f explore_node")
+        except Exception as e:
+            self.get_logger().info(f"{e}")
+
         home_dir = os.environ["HOME"]
         yaml_file = os.path.join(
             home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/map/map.yaml"
@@ -102,9 +108,9 @@ class GoalPublisher(Node):
             msg = PoseStamped()
             msg.header.stamp.sec = 0
             msg.header.frame_id = "map"
-            msg.pose.position.x = self.points[0]["px"]
-            msg.pose.position.y = self.points[0]["py"]
-            msg.pose.position.z = self.points[0]["pz"]
+            msg.pose.position.x = 0.0
+            msg.pose.position.y = 0.0
+            msg.pose.position.z = 0.0
             msg.pose.orientation.x = self.points[0]["ox"]
             msg.pose.orientation.y = self.points[0]["oy"]
             msg.pose.orientation.z = self.points[0]["oz"]
