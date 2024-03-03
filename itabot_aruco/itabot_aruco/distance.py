@@ -12,6 +12,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from geometry_msgs.msg import TransformStamped
 import tf_transformations as tf_trans
 import tf2_ros
+import time
 
 
 class ArucoDetector(Node):
@@ -77,6 +78,8 @@ class ArucoDetector(Node):
         # self.r_vectors = self.calib_data["rVector"]
         # self.t_vectors = self.calib_data["tVector"] """
 
+        self.cam_mat = np.zeros((3, 3))
+
     def calib_callback(self, msg):
         # Camera calibration from topic:
 
@@ -109,7 +112,7 @@ class ArucoDetector(Node):
             # Decode the compressed image
             np_arr = np.frombuffer(msg.data, np.uint8)
             frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-
+            frame2 = frame.copy()
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             marker_corners, marker_IDs, reject = aruco.detectMarkers(
                 gray_frame, self.marker_dict, parameters=self.param_markers
@@ -193,6 +196,15 @@ class ArucoDetector(Node):
                             self.aruco_publishers[ids[0]] = self.create_publisher(
                                 PoseWithCovarianceStamped, f"/aruco/pose/nr{ids[0]}", 10
                             )
+                            # saving picture of frame
+                            try:
+                                for i in range(5):
+                                    cv2.imwrite(
+                                        f"Aruco{ids[0]}_photo_nr_{i}.jpg", frame2
+                                    )
+                                    time.sleep(0.1)
+                            except Exception as e:
+                                self.get_logger().info(f"{e}")
 
                         aruco_position = PoseWithCovarianceStamped()
                         aruco_position.header.stamp = self.get_clock().now().to_msg()
@@ -248,4 +260,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-
