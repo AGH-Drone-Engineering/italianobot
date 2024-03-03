@@ -13,6 +13,7 @@ from geometry_msgs.msg import TransformStamped
 import tf_transformations as tf_trans
 import tf2_ros
 import time
+import os
 
 
 class ArucoDetector(Node):
@@ -199,9 +200,12 @@ class ArucoDetector(Node):
                             # saving picture of frame
                             try:
                                 for i in range(5):
-                                    cv2.imwrite(
-                                        f"Aruco{ids[0]}_photo_nr_{i}.jpg", frame2
+                                    home_dir = os.environ["HOME"]
+                                    image_file = os.path.join(
+                                        home_dir,
+                                        f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{i}.jpg",
                                     )
+                                    cv2.imwrite(image_file, frame2)
                                     time.sleep(0.1)
                             except Exception as e:
                                 self.get_logger().info(f"{e}")
