@@ -47,6 +47,8 @@ class ArucoDetector(Node):
 
         # Aruco position publishers:
 
+        self.pictures_counter = dict()
+
         # pose with covariance:
         self.aruco_publishers = dict()
 
@@ -197,16 +199,20 @@ class ArucoDetector(Node):
                             self.aruco_publishers[ids[0]] = self.create_publisher(
                                 PoseWithCovarianceStamped, f"/aruco/pose/nr{ids[0]}", 10
                             )
+
+                        i = self.pictures_counter.get(ids[0], 0)
+                        if i < 5:
+                            self.pictures_counter[ids[0]] = i + 1
                             # saving picture of frame
                             try:
-                                for i in range(5):
-                                    home_dir = os.environ["HOME"]
-                                    image_file = os.path.join(
-                                        home_dir,
-                                        f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{i}.jpg",
-                                    )
-                                    cv2.imwrite(image_file, frame2)
-                                    time.sleep(0.1)
+
+                                home_dir = os.environ["HOME"]
+                                image_file = os.path.join(
+                                    home_dir,
+                                    f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{i}.jpg",
+                                )
+                                cv2.imwrite(image_file, frame2)
+                                time.sleep(0.1)
                             except Exception as e:
                                 self.get_logger().info(f"{e}")
 
