@@ -129,7 +129,7 @@ def generate_launch_description():
                 }.items(),
             ),
             TimerAction(
-                period=EXPLORE_MINUTES * 60,
+                period=EXPLORE_MINUTES * 60.0,
                 actions=[
                     Node(
                         package="nav2_map_server",
@@ -140,7 +140,7 @@ def generate_launch_description():
                 ],
             ),
             TimerAction(
-                period=EXPLORE_MINUTES * 60 + SAVING_TIME_SECONDS,
+                period=EXPLORE_MINUTES * 60.0 + SAVING_TIME_SECONDS,
                 actions=[
                     ExecuteProcess(
                         cmd=["python3", minimal_publisher_path], output="screen"
