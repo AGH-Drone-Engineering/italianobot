@@ -45,15 +45,17 @@ class ArucoDetector(Node):
             qos_profile,
         )
 
-        # Aruco position publishers:
-
+        # Pictures saver:
         self.pictures_counter = dict()
+
+        # Aruco position publishers:
 
         # pose with covariance:
         self.aruco_publishers = dict()
 
         # tf broadcaster:
         self.aruco_broadcaster = tf2_ros.TransformBroadcaster(self)
+        self.aruco_tf_dict = dict()
 
         # do testow awaryjnie (potem do usuniecia):
         self.distance_pub = self.create_publisher(String, "/distance", 10)
@@ -81,8 +83,8 @@ class ArucoDetector(Node):
         # self.r_vectors = self.calib_data["rVector"]
         # self.t_vectors = self.calib_data["tVector"] """
 
-        self.cam_mat = np.zeros((3, 3)) 
-        self.dist_coef = np.zeros(5)    
+        self.cam_mat = np.zeros((3, 3))
+        self.dist_coef = np.zeros(5)
 
     def calib_callback(self, msg):
         # Camera calibration from topic:
@@ -204,7 +206,7 @@ class ArucoDetector(Node):
                         j = self.pictures_counter.get(ids[0], 0)
                         if j < 5:
                             self.pictures_counter[ids[0]] = j + 1
-                            
+
                             # saving picture of frame
                             try:
 

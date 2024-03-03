@@ -43,6 +43,9 @@ class ArucoDetector(Node):
             qos_profile,
         )
 
+        # Pictures saver:
+        self.pictures_counter = dict()
+
         # Aruco position publishers:
 
         # pose with covariance:
@@ -56,9 +59,15 @@ class ArucoDetector(Node):
 
         # Aruco code parameters:
 
-        self.MARKER_SIZE = 10  # centimeters
+        self.ARUCO_CODE_SIZE_CM = 10  # centimeters
+        self.MARKER_SIZE = (
+            self.ARUCO_CODE_SIZE_CM / 100
+        )  # tVec unit is meters so conversion is necessary
+
         self.marker_dict = aruco.Dictionary_get(aruco.DICT_ARUCO_ORIGINAL)
         self.param_markers = aruco.DetectorParameters_create()
+        self.cam_mat = np.zeros((3, 3))
+        self.dist_coef = np.zeros(5)
 
     def calib_callback(self, msg):
         # Camera calibration from topic:
@@ -86,7 +95,7 @@ class ArucoDetector(Node):
         R_rotated = np.dot(R_rotated, R_x)
         rVec_rotated, _ = cv2.Rodrigues(R_rotated)
         rVec[i] = rVec_rotated.T
-    
+
     def img_callback(self, msg):
         try:
 
@@ -100,12 +109,13 @@ class ArucoDetector(Node):
                 rVec, tVec, _ = aruco.estimatePoseSingleMarkers(
                     marker_corners, self.MARKER_SIZE, self.cam_mat, self.dist_coef
                 )
+
                 total_markers = range(0, marker_IDs.size)
                 for ids, corners, i in zip(marker_IDs, marker_corners, total_markers):
-                    
+
                     rVec2 = rVec.copy()
                     self.rviz2_axes(rVec2, i)
-                    
+
                     cv2.polylines(
                         frame,
                         [corners.astype(np.int32)],
@@ -124,6 +134,7 @@ class ArucoDetector(Node):
                     distance = np.sqrt(
                         tVec[i][0][2] ** 2 + tVec[i][0][0] ** 2 + tVec[i][0][1] ** 2
                     )
+
                     point = cv2.drawFrameAxes(
                         frame,
                         self.cam_mat,
@@ -135,7 +146,7 @@ class ArucoDetector(Node):
                     )
                     cv2.putText(
                         frame,
-                        f"id: {ids[0]} Dist: {round(distance, 2)}",
+                        f"x:{round(tVec[i][0][2],1)} y:{round(-tVec[i][0][0],1)} z: {round(-tVec[i][0][1],1)} ",
                         tuple(top_right),
                         cv2.FONT_HERSHEY_PLAIN,
                         1.3,
@@ -145,7 +156,7 @@ class ArucoDetector(Node):
                     )
                     cv2.putText(
                         frame,
-                        f"x:{round(tVec[i][0][2],1)} y:{round(-tVec[i][0][0],1)} z: {round(-tVec[i][0][1],1)} ",
+                        f"x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)} ",
                         tuple(bottom_right),
                         cv2.FONT_HERSHEY_PLAIN,
                         1.0,
@@ -166,7 +177,6 @@ class ArucoDetector(Node):
                         )
 
                         # Convert rotation matrix to quaternion
-
                         quaternion = tf_trans.quaternion_from_matrix(rVec_matrix)
 
                         # PoseWithCovarianceStamped:
@@ -175,9 +185,26 @@ class ArucoDetector(Node):
                                 PoseWithCovarianceStamped, f"/aruco/pose/nr{ids[0]}", 10
                             )
 
+                        j = self.pictures_counter.get(ids[0], 0)
+                        if j < 5:
+                            self.pictures_counter[ids[0]] = j + 1
+
+                            # saving picture of frame
+                            try:
+
+                                home_dir = os.environ["HOME"]
+                                image_file = os.path.join(
+                                    home_dir,
+                                    f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{j}.jpg",
+                                )
+                                cv2.imwrite(image_file, frame2)
+                                time.sleep(0.1)
+                            except Exception as e:
+                                self.get_logger().info(f"{e}")
+
                         aruco_position = PoseWithCovarianceStamped()
                         aruco_position.header.stamp = self.get_clock().now().to_msg()
-                        aruco_position.header.frame_id = "orbbec_astra_link"
+                        aruco_position.header.frame_id = "camera_color_frame"
                         self.position_pub = self.aruco_publishers[ids[0]]
 
                         aruco_position.pose.pose.position.x = tVec[i][0][2]
@@ -194,7 +221,7 @@ class ArucoDetector(Node):
                         # TF_broadcast:
                         aruco_ekf = TransformStamped()
                         aruco_ekf.header.stamp = self.get_clock().now().to_msg()
-                        aruco_ekf.header.frame_id = "orbbec_astra_link"
+                        aruco_ekf.header.frame_id = "camera_color_frame"
                         aruco_ekf.child_frame_id = f"aruco_marker_{ids[0]}"
 
                         aruco_ekf.transform.translation.x = tVec[i][0][2]
@@ -209,7 +236,7 @@ class ArucoDetector(Node):
                         self.aruco_broadcaster.sendTransform(aruco_ekf)
 
                     except Exception as e:
-                        self.get_logger().info(f"Publisher error: {e}")
+                        self.get_logger().info(f"muj Publisher error: {e}")
 
             cv2.imshow("frame", frame)
             key = cv2.waitKey(1)
