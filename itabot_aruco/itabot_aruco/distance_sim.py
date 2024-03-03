@@ -12,6 +12,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from geometry_msgs.msg import TransformStamped
 import tf_transformations as tf_trans
 import tf2_ros
+import time
+import os
 
 
 class ArucoDetector(Node):
@@ -100,7 +102,7 @@ class ArucoDetector(Node):
         try:
 
             frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
-
+            frame2 = frame.copy()
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             marker_corners, marker_IDs, reject = aruco.detectMarkers(
                 gray_frame, self.marker_dict, parameters=self.param_markers
