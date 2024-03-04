@@ -12,6 +12,7 @@ from tf2_ros import TransformListener, Buffer
 from tf2_ros import LookupException, ConnectivityException, ExtrapolationException
 import sys
 import os
+import re
 
 
 home_dir = os.environ["HOME"]
@@ -23,6 +24,9 @@ import pgm_to_nav2points as nav2p
 class GoalPublisher(Node):
 
     def __init__(self):
+
+        self.arucos_to_find = ["55"]
+
         try:
             os.system("pkill -f explore_node")
         except Exception as e:
@@ -75,6 +79,12 @@ class GoalPublisher(Node):
         b = float(b)
         return True if abs(a - b) <= margin else False
 
+    def get_found_arucos(self):
+        info_tf = self.tf_buffer.all_frames_as_string()
+        pattern = r"\baruco\w*"
+        info_tf_aruco = re.findall(pattern, info_tf)
+        return [aruco[13:] for aruco in info_tf_aruco]
+
     def position_sub(self, msg):
 
         self.actual_position_pose["px"] = msg.pose.pose.position.x
@@ -86,6 +96,18 @@ class GoalPublisher(Node):
         self.actual_position_pose["ow"] = msg.pose.pose.orientation.w
 
     def timer_callback(self):
+        try:
+            arucos_found = self.get_found_arucos()
+            for aruco in arucos_found:
+                if aruco in self.arucos_to_find:
+                    self.get_logger().info(f"Aruco found: {aruco}")
+                    self.arucos_to_find.remove(aruco)
+
+            if len(self.arucos_to_find) == 0:
+                self.i = len(self.points)
+
+        except Exception as e:
+            self.get_logger().info(f"Aruco_to_find remover error {e}")
         try:
             msg = PoseStamped()
             msg.header.stamp.sec = 0
