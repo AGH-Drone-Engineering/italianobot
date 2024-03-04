@@ -58,13 +58,13 @@ class GoalPublisher(Node):
         )
         self.subscription  # prevent unused variable warning
         self.actual_position_pose = {
-            "px": -100,
-            "py": -100,
-            "pz": -100,
-            "ow": -100,
-            "ox": -100,
-            "oy": -100,
-            "oz": -100,
+            "px": 0,
+            "py": 0,
+            "pz": 0,
+            "ow": 0,
+            "ox": 0,
+            "oy": 0,
+            "oz": 0,
         }
         self.actual_position_tf_base_link = dict()
 
@@ -212,37 +212,37 @@ class GoalPublisher(Node):
             try:
                 if (
                     self.different(
-                        self.actual_position_tf_base_link["px"],
+                        self.actual_position_pose["px"],
                         self.points[self.i]["px"],
                         margin,
                     )
                     and self.different(
-                        self.actual_position_tf_base_link["py"],
+                        self.actual_position_pose["py"],
                         self.points[self.i]["py"],
                         margin,
                     )
                     and self.different(
-                        self.actual_position_tf_base_link["pz"],
+                        self.actual_position_pose["pz"],
                         self.points[self.i]["pz"],
                         margin,
                     )
                     and self.different(
-                        self.actual_position_tf_base_link["ow"],
+                        self.actual_position_pose["ow"],
                         self.points[self.i]["ow"],
                         margin,
                     )
                     and self.different(
-                        self.actual_position_tf_base_link["ox"],
+                        self.actual_position_pose["ox"],
                         self.points[self.i]["ox"],
                         margin,
                     )
                     and self.different(
-                        self.actual_position_tf_base_link["oy"],
+                        self.actual_position_pose["oy"],
                         self.points[self.i]["oy"],
                         margin,
                     )
                     and self.different(
-                        self.actual_position_tf_base_link["oz"],
+                        self.actual_position_pose["oz"],
                         self.points[self.i]["oz"],
                         margin,
                     )
