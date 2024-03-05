@@ -210,55 +210,97 @@ class ArucoDetector(Node):
                                 self.get_logger().info(f"{e}")
 
                         # TF_broadcast:
-                        camera_to_base_link = self.tf_buffer.lookup_transform(
-                            "base_link", "camera_color_frame", rclpy.time.Time()
-                        )
-                        base_link_to_map = self.tf_buffer.lookup_transform(
-                            "map", "base_link", rclpy.time.Time()
-                        )
-
                         aruco_ekf = TransformStamped()
                         aruco_ekf.header.stamp = self.get_clock().now().to_msg()
 
                         aruco_ekf.header.frame_id = "map"
                         aruco_ekf.child_frame_id = f"aruco_marker_{ids[0]}"
 
-                        aruco_ekf.transform.translation.x = (
-                            tVec[i][0][2]
-                            + camera_to_base_link.transform.translation.x
-                            + base_link_to_map.transform.translation.x
+                        aruco_ekf.transform.translation.x = tVec[i][0][2]
+
+                        aruco_ekf.transform.translation.y = -tVec[i][0][0]
+
+                        aruco_ekf.transform.translation.z = -tVec[i][0][1]
+                        camera_color_frame_to_camera_link = (
+                            self.tf_buffer.lookup_transform(
+                                "camera_link", "camera_color_frame", rclpy.time.Time()
+                            )
                         )
-                        aruco_ekf.transform.translation.y = (
-                            -tVec[i][0][0]
-                            + camera_to_base_link.transform.translation.y
-                            + base_link_to_map.transform.translation.y
+                        camera_link_to_body_link = self.tf_buffer.lookup_transform(
+                            "body_link", "camera_link", rclpy.time.Time()
                         )
-                        aruco_ekf.transform.translation.z = (
-                            -tVec[i][0][1]
-                            + camera_to_base_link.transform.translation.z
-                            + base_link_to_map.transform.translation.z
+                        body_link_to_base_link = self.tf_buffer.lookup_transform(
+                            "base_link", "body_link", rclpy.time.Time()
+                        )
+                        base_link_to_odom = self.tf_buffer.lookup_transform(
+                            "odom", "base_link", rclpy.time.Time()
+                        )
+                        odom_to_map = self.tf_buffer.lookup_transform(
+                            "map", "odom", rclpy.time.Time()
                         )
 
-                        # Convert the rotation from the camera to the base_link to a quaternion
-                        camera_to_base_link_quaternion = [
-                            camera_to_base_link.transform.rotation.x,
-                            camera_to_base_link.transform.rotation.y,
-                            camera_to_base_link.transform.rotation.z,
-                            camera_to_base_link.transform.rotation.w,
-                        ]
+                        # Wykonaj transformacje
+                        aruco_ekf.transform.translation.x += (
+                            camera_color_frame_to_camera_link.transform.translation.x
+                        )
+                        aruco_ekf.transform.translation.y += (
+                            camera_color_frame_to_camera_link.transform.translation.y
+                        )
+                        aruco_ekf.transform.translation.z += (
+                            camera_color_frame_to_camera_link.transform.translation.z
+                        )
+
+                        aruco_ekf.transform.translation.x += (
+                            camera_link_to_body_link.transform.translation.x
+                        )
+                        aruco_ekf.transform.translation.y += (
+                            camera_link_to_body_link.transform.translation.y
+                        )
+                        aruco_ekf.transform.translation.z += (
+                            camera_link_to_body_link.transform.translation.z
+                        )
+
+                        aruco_ekf.transform.translation.x += (
+                            body_link_to_base_link.transform.translation.x
+                        )
+                        aruco_ekf.transform.translation.y += (
+                            body_link_to_base_link.transform.translation.y
+                        )
+                        aruco_ekf.transform.translation.z += (
+                            body_link_to_base_link.transform.translation.z
+                        )
+
+                        aruco_ekf.transform.translation.x += (
+                            base_link_to_odom.transform.translation.x
+                        )
+                        aruco_ekf.transform.translation.y += (
+                            base_link_to_odom.transform.translation.y
+                        )
+                        aruco_ekf.transform.translation.z += (
+                            base_link_to_odom.transform.translation.z
+                        )
+
+                        aruco_ekf.transform.translation.x += (
+                            odom_to_map.transform.translation.x
+                        )
+                        aruco_ekf.transform.translation.y += (
+                            odom_to_map.transform.translation.y
+                        )
+                        aruco_ekf.transform.translation.z += (
+                            odom_to_map.transform.translation.z
+                        )
+
+                        # Przekształć rotację z base_link do mapy na kwaternion
                         base_link_to_map_quaternion = [
-                            base_link_to_map.transform.rotation.x,
-                            base_link_to_map.transform.rotation.y,
-                            base_link_to_map.transform.rotation.z,
-                            base_link_to_map.transform.rotation.w,
+                            odom_to_map.transform.rotation.x,
+                            odom_to_map.transform.rotation.y,
+                            odom_to_map.transform.rotation.z,
+                            odom_to_map.transform.rotation.w,
                         ]
 
-                        # Multiply the quaternions to combine the rotations
-                        combined_quaternion_base_link = quaternion_multiply(
-                            quaternion, camera_to_base_link_quaternion
-                        )
+                        # Pomnóż kwaterniony, aby połączyć rotacje
                         combined_quaternion = quaternion_multiply(
-                            combined_quaternion_base_link, base_link_to_map_quaternion
+                            quaternion, base_link_to_map_quaternion
                         )
 
                         aruco_ekf.transform.rotation.w = combined_quaternion[0]
@@ -266,6 +308,7 @@ class ArucoDetector(Node):
                         aruco_ekf.transform.rotation.y = combined_quaternion[2]
                         aruco_ekf.transform.rotation.z = combined_quaternion[3]
 
+                        # Dodaj przekształcony aruco_ekf do słownika
                         self.arucos_found[ids[0]] = aruco_ekf
 
                     except Exception as e:
