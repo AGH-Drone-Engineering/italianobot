@@ -29,15 +29,13 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
             ):
                 # free space between points:
                 if len(goal_points) == 0 or all(
-                    np.abs(gp["px"] - x * resolution - init_pose[0])
-                    > MARGIN * resolution
-                    or np.abs(gp["py"] - y * resolution - init_pose[1])
-                    > MARGIN * resolution
+                    np.abs(gp["px"] - x * resolution) > MARGIN * resolution
+                    or np.abs(gp["py"] - y * resolution) > MARGIN * resolution
                     for gp in goal_points[-4 * width // MARGIN :]
                 ):
 
-                    real_x = x * resolution + init_pose[0]
-                    real_y = y * resolution + init_pose[1]
+                    real_x = x * resolution
+                    real_y = y * resolution
                     rotation = [
                         {"ow": 1.0, "ox": 0.0, "oy": 0.0, "oz": 0.0},
                         {"ow": 0.7, "ox": 0.0, "oy": 0.0, "oz": -0.7},
