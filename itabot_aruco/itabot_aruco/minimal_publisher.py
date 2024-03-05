@@ -48,10 +48,15 @@ class GoalPublisher(Node):
         )
         map_data = nav2p.load_map_data(yaml_file)
         resolution = map_data["resolution"]
-        init_pose = map_data["origin"][:2]
+
+        # Turbo ważny parametr:
+        # DO ZMIANY NA TAKI JAK NA ZAWODACH (POZYCJA POCZĄTKOWA)
+        X_POSE = -7.92
+        Y_POSE = 1.3
+        init_pose = [X_POSE, Y_POSE]
 
         # set the parameters of algorithm (how far from wall the goal point can be placed and how far from another goal point):
-        MARGIN = 100  # minimal spacing between points
+        MARGIN = 10  # minimal spacing between points
         WALL_DET = 5  # minimal spacing between rosbot and wall
 
         # get list of goal points:

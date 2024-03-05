@@ -25,7 +25,7 @@ map_file = os.path.join(
 minimal_publisher_path = os.path.join(
     home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/minimal_publisher.py"
 )
-EXPLORE_MINUTES = 1  # if this parameter is changed, please change it also in minimal_publisher in timer_callback
+EXPLORE_MINUTES = 6  # if this parameter is changed, please change it also in minimal_publisher in timer_callback
 SAVING_TIME_SECONDS = 10  # if this parameter is changed, please change it also in minimal_publisher in timer_callback
 
 

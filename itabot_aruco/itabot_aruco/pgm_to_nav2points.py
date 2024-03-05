@@ -29,13 +29,15 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
             ):
                 # free space between points:
                 if len(goal_points) == 0 or all(
-                    np.abs(gp["px"] - x * resolution) > MARGIN * resolution
-                    or np.abs(gp["py"] - y * resolution) > MARGIN * resolution
+                    np.abs(gp["px"] - x * resolution - init_pose[0])
+                    > MARGIN * resolution
+                    or np.abs(gp["py"] - y * resolution - init_pose[1])
+                    > MARGIN * resolution
                     for gp in goal_points[-4 * width // MARGIN :]
                 ):
 
-                    real_x = x * resolution
-                    real_y = y * resolution
+                    real_x = x * resolution + init_pose[0]
+                    real_y = y * resolution + init_pose[1]
                     rotation = [
                         {"ow": 1.0, "ox": 0.0, "oy": 0.0, "oz": 0.0},
                         {"ow": 0.7, "ox": 0.0, "oy": 0.0, "oz": -0.7},
@@ -55,7 +57,6 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                                 "oz": rotation[i]["oz"],
                             }
                         )
-                    # print(real_x, real_y)
                     # Saving map with goal points
                     # Only for testing the algorithm
                     out_put_img_array[y][x] = 150
@@ -63,7 +64,6 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
     directory = os.path.dirname(map_file)
     points_file = os.path.join(directory, "points.pgm")
     im.save(points_file)
-
     return goal_points
 
 
