@@ -13,6 +13,7 @@ from tf2_ros import LookupException, ConnectivityException, ExtrapolationExcepti
 import sys
 import os
 import re
+import time
 
 
 home_dir = os.environ["HOME"]
@@ -25,13 +26,19 @@ class GoalPublisher(Node):
 
     def __init__(self):
 
+        # 15 minutes timer begin:
+        self.start = time.time()
+
+        # list of codes to find:
         self.arucos_to_find = ["55"]
 
+        # stop exploration:
         try:
             os.system("pkill -f explore_node")
         except Exception as e:
             self.get_logger().info(f"{e}")
 
+        # load map to create the goal points:
         home_dir = os.environ["HOME"]
         yaml_file = os.path.join(
             home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/map/map.yaml"
@@ -42,17 +49,23 @@ class GoalPublisher(Node):
         map_data = nav2p.load_map_data(yaml_file)
         resolution = map_data["resolution"]
         init_pose = map_data["origin"][:2]
+
+        # set the parameters of algorithm (how far from wall the goal point can be placed and how far from another goal point):
         MARGIN = 50  # minimal spacing between points
         WALL_DET = 5  # minimal spacing between rosbot and wall
+
+        # get list of goal points:
         self.points = nav2p.calculate_goal_points(
             map_file, resolution, init_pose, MARGIN, WALL_DET
         )
 
+        # points publisher:
         super().__init__("goal_publisher")
         self.publisher_ = self.create_publisher(PoseStamped, "goal_pose", 10)
         timer_period = 3  # sekundy
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
+        # pose with covariance subscriber (unnecessary but just for safety if tf fails)
         self.subscription = self.create_subscription(
             PoseWithCovarianceStamped, "pose", self.position_sub, 10
         )
@@ -66,11 +79,14 @@ class GoalPublisher(Node):
             "oy": 0,
             "oz": 0,
         }
+
+        # dict to find if rosbot has reached position
         self.actual_position_tf_base_link = dict()
 
+        # actual goal point counter (= len(self.points) means that he will go to the base (0,0,0) because of IndexError)
         self.i = 0
 
-        # Dodajemy TransformListener
+        # TransformListener
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
@@ -95,7 +111,20 @@ class GoalPublisher(Node):
         self.actual_position_pose["oz"] = msg.pose.pose.orientation.z
         self.actual_position_pose["ow"] = msg.pose.pose.orientation.w
 
+    def return_time(self):
+        stop = time.time()
+        return stop - self.start  # it return time is seconds
+
     def timer_callback(self):
+
+        # Go to the base if time passed:
+        # assumption: Exploration time equals 6 minutes
+        # 9 minutes in seconds for minimal publisher to find aruco codes
+        time_passed = (15 - 6) * 60
+        if self.return_time() >= time_passed:
+            self.i = len(self.points)
+
+        # Go to the base if all codes have been found:
         try:
             arucos_found = self.get_found_arucos()
             for aruco in arucos_found:
@@ -108,6 +137,8 @@ class GoalPublisher(Node):
 
         except Exception as e:
             self.get_logger().info(f"Aruco_to_find remover error {e}")
+
+        # Main logic of goal points setter:
         try:
             msg = PoseStamped()
             msg.header.stamp.sec = 0
@@ -144,14 +175,10 @@ class GoalPublisher(Node):
         except Exception as e:
             self.get_logger().info(f"{e}")
 
-        # current PoseWithCovarianceStamped position
-        self.get_logger().info(
-            f"\nCURRENT POSITION POSE_WITH_COVARIANCE_STAMPED: \n{self.actual_position_pose}\n"
-        )
         # read transform
         try:
             trans = self.tf_buffer.lookup_transform(
-                "odom", "base_link", rclpy.time.Time()
+                "map", "base_link", rclpy.time.Time()
             )
             self.actual_position_tf_base_link["px"] = trans.transform.translation.x
             self.actual_position_tf_base_link["py"] = trans.transform.translation.y
@@ -164,7 +191,7 @@ class GoalPublisher(Node):
                 f"\nCURRENT BASE_LINK POSITION: \n{self.actual_position_tf_base_link}\n"
             )
         except (LookupException, ConnectivityException, ExtrapolationException) as e:
-            self.get_logger().info("Could not transform odom to base_link: %s" % str(e))
+            self.get_logger().info("Could not transform map to base_link: %s" % str(e))
 
         # changing i to i+ if goal reached
         margin = 0.3
