@@ -186,23 +186,7 @@ class ArucoDetector(Node):
                         # Convert rotation matrix to quaternion
                         quaternion = tf_trans.quaternion_from_matrix(rVec_matrix)
 
-                        j = self.pictures_counter.get(ids[0], 0)
-                        if j < 5:
-                            self.pictures_counter[ids[0]] = j + 1
-
-                            # saving picture of frame
-                            try:
-
-                                home_dir = os.environ["HOME"]
-                                image_file = os.path.join(
-                                    home_dir,
-                                    f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{j}.jpg",
-                                )
-                                cv2.imwrite(image_file, frame2)
-                                time.sleep(0.1)
-                            except Exception as e:
-                                self.get_logger().info(f"{e}")
-
+                        
                         # TF_broadcast:
                         aruco_ekf = TransformStamped()
                         aruco_ekf.header.stamp = self.get_clock().now().to_msg()
@@ -247,6 +231,23 @@ class ArucoDetector(Node):
                         aruco_ekf.transform.rotation.z = combined_quaternion[3]
 
                         self.aruco_broadcaster.sendTransform(aruco_ekf)
+
+                        j = self.pictures_counter.get(ids[0], 0)
+                        if j < 10:
+                            self.pictures_counter[ids[0]] = j + 1
+
+                            # saving picture of frame
+                            try:
+
+                                home_dir = os.environ["HOME"]
+                                image_file = os.path.join(
+                                    home_dir,
+                                    f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{j}.jpg",
+                                )
+                                cv2.imwrite(image_file, frame2)
+                                time.sleep(0.1)
+                            except Exception as e:
+                                self.get_logger().info(f"{e}")
 
                     except Exception as e:
                         self.get_logger().info(f"muj Publisher error: {e}")

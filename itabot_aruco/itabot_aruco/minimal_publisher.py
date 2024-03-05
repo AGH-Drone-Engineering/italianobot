@@ -119,24 +119,33 @@ class GoalPublisher(Node):
 
         # Go to the base if time passed:
         # assumption: Exploration time equals 6 minutes
-        # 9 minutes in seconds for minimal publisher to find aruco codes
-        time_passed = (15 - 6) * 60
+        # 9 minutes in seconds (minus 10 sec cuz of saving delay) for minimal publisher to find aruco codes
+        EXPLORE_MINUTES = 6  # if this parameter is changed, please change it also in itabot_nav/bringup.launch.py
+        SAVING_TIME_SECONDS = 10  # if this parameter is changed, please change it also in itabot_nav/bringup.launch.py
+        time_passed = (15 - EXPLORE_MINUTES) * 60 - SAVING_TIME_SECONDS
         if self.return_time() >= time_passed:
             self.i = len(self.points)
-
-        # Go to the base if all codes have been found:
-        try:
-            arucos_found = self.get_found_arucos()
-            for aruco in arucos_found:
-                if aruco in self.arucos_to_find:
-                    self.get_logger().info(f"Aruco found: {aruco}")
-                    self.arucos_to_find.remove(aruco)
+            for i in range(10):
+                self.get_logger().info(f"TIME PASSED")
+        else:
+            # Go to the base if all codes have been found:
+            try:
+                arucos_found = self.get_found_arucos()
+                for aruco in arucos_found:
+                    if aruco in self.arucos_to_find:
+                        self.get_logger().info(f"Aruco found: {aruco}")
+                        self.arucos_to_find.remove(aruco)
+            except Exception as e:
+                self.get_logger().info(f"Aruco_to_find remover error {e}")
 
             if len(self.arucos_to_find) == 0:
                 self.i = len(self.points)
 
-        except Exception as e:
-            self.get_logger().info(f"Aruco_to_find remover error {e}")
+            # IF TIME DIDN'T EXPIRE AND ARUCO CODES NOT FOUND:
+            elif self.i >= len(self.points):
+                for i in range(10):
+                    self.get_logger().info("Time didn't pass, aruco codes not found")
+                self.i = 0
 
         # Main logic of goal points setter:
         try:
