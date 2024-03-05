@@ -106,12 +106,6 @@ class ArucoDetector(Node):
     def img_callback(self, msg):
 
         try:
-            for aruco_ in self.arucos_found.values():
-                self.aruco_broadcaster.sendTransform(aruco_)
-
-        except Exception as e:
-            self.get_logger().info(f"TF publish error {e}")
-        try:
             frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
             frame2 = frame.copy()
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -221,86 +215,30 @@ class ArucoDetector(Node):
                         aruco_ekf.transform.translation.y = -tVec[i][0][0]
 
                         aruco_ekf.transform.translation.z = -tVec[i][0][1]
-                        camera_color_frame_to_camera_link = (
-                            self.tf_buffer.lookup_transform(
-                                "camera_link", "camera_color_frame", rclpy.time.Time()
-                            )
-                        )
-                        camera_link_to_body_link = self.tf_buffer.lookup_transform(
-                            "body_link", "camera_link", rclpy.time.Time()
-                        )
-                        body_link_to_base_link = self.tf_buffer.lookup_transform(
-                            "base_link", "body_link", rclpy.time.Time()
-                        )
-                        base_link_to_odom = self.tf_buffer.lookup_transform(
-                            "odom", "base_link", rclpy.time.Time()
-                        )
-                        odom_to_map = self.tf_buffer.lookup_transform(
-                            "map", "odom", rclpy.time.Time()
-                        )
 
-                        # Wykonaj transformacje
-                        aruco_ekf.transform.translation.x += (
-                            camera_color_frame_to_camera_link.transform.translation.x
-                        )
-                        aruco_ekf.transform.translation.y += (
-                            camera_color_frame_to_camera_link.transform.translation.y
-                        )
-                        aruco_ekf.transform.translation.z += (
-                            camera_color_frame_to_camera_link.transform.translation.z
+                        camera_color_frame_to_map = self.tf_buffer.lookup_transform(
+                            "map", "camera_color_frame", rclpy.time.Time()
                         )
 
                         aruco_ekf.transform.translation.x += (
-                            camera_link_to_body_link.transform.translation.x
+                            camera_color_frame_to_map.transform.translation.x
                         )
                         aruco_ekf.transform.translation.y += (
-                            camera_link_to_body_link.transform.translation.y
+                            camera_color_frame_to_map.transform.translation.y
                         )
                         aruco_ekf.transform.translation.z += (
-                            camera_link_to_body_link.transform.translation.z
+                            camera_color_frame_to_map.transform.translation.z
                         )
 
-                        aruco_ekf.transform.translation.x += (
-                            body_link_to_base_link.transform.translation.x
-                        )
-                        aruco_ekf.transform.translation.y += (
-                            body_link_to_base_link.transform.translation.y
-                        )
-                        aruco_ekf.transform.translation.z += (
-                            body_link_to_base_link.transform.translation.z
-                        )
-
-                        aruco_ekf.transform.translation.x += (
-                            base_link_to_odom.transform.translation.x
-                        )
-                        aruco_ekf.transform.translation.y += (
-                            base_link_to_odom.transform.translation.y
-                        )
-                        aruco_ekf.transform.translation.z += (
-                            base_link_to_odom.transform.translation.z
-                        )
-
-                        aruco_ekf.transform.translation.x += (
-                            odom_to_map.transform.translation.x
-                        )
-                        aruco_ekf.transform.translation.y += (
-                            odom_to_map.transform.translation.y
-                        )
-                        aruco_ekf.transform.translation.z += (
-                            odom_to_map.transform.translation.z
-                        )
-
-                        # Przekształć rotację z base_link do mapy na kwaternion
-                        base_link_to_map_quaternion = [
-                            odom_to_map.transform.rotation.x,
-                            odom_to_map.transform.rotation.y,
-                            odom_to_map.transform.rotation.z,
-                            odom_to_map.transform.rotation.w,
+                        camera_color_frame_to_map_quaternion = [
+                            camera_color_frame_to_map.transform.rotation.x,
+                            camera_color_frame_to_map.transform.rotation.y,
+                            camera_color_frame_to_map.transform.rotation.z,
+                            camera_color_frame_to_map.transform.rotation.w,
                         ]
 
-                        # Pomnóż kwaterniony, aby połączyć rotacje
                         combined_quaternion = quaternion_multiply(
-                            quaternion, base_link_to_map_quaternion
+                            quaternion, camera_color_frame_to_map_quaternion
                         )
 
                         aruco_ekf.transform.rotation.w = combined_quaternion[0]
@@ -308,8 +246,7 @@ class ArucoDetector(Node):
                         aruco_ekf.transform.rotation.y = combined_quaternion[2]
                         aruco_ekf.transform.rotation.z = combined_quaternion[3]
 
-                        # Dodaj przekształcony aruco_ekf do słownika
-                        self.arucos_found[ids[0]] = aruco_ekf
+                        self.aruco_broadcaster.sendTransform(aruco_ekf)
 
                     except Exception as e:
                         self.get_logger().info(f"muj Publisher error: {e}")
