@@ -14,6 +14,7 @@ import tf2_ros
 import time
 import os
 from tf_transformations import quaternion_multiply
+import json
 
 
 class ArucoDetector(Node):
@@ -45,6 +46,8 @@ class ArucoDetector(Node):
             qos_profile,
         )
 
+        self.timer = self.create_timer(5, self.timer_callback)
+
         # Pictures saver:
         self.pictures_counter = dict()
 
@@ -55,7 +58,8 @@ class ArucoDetector(Node):
 
         # tf broadcaster:
         self.aruco_broadcaster = tf2_ros.TransformBroadcaster(self)
-        self.aruco_tf_dict = dict()
+        self.arucos_found_cnt10 = dict()
+        self.mean_value_of_aruco_ekf = dict()
 
         # tf buffer and listener:
         self.tf_buffer = tf2_ros.Buffer()
@@ -116,6 +120,57 @@ class ArucoDetector(Node):
         R_rotated = np.dot(R_rotated, R_x)
         rVec_rotated, _ = cv2.Rodrigues(R_rotated)
         rVec[i] = rVec_rotated.T
+
+    def save_info_to_file(
+        self, lst: list[TransformStamped], mean: TransformStamped, name: str
+    ):
+        lst.append(mean)
+        home_dir = os.environ["HOME"]
+        raport_dir = os.path.join(
+            home_dir,
+            "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/raports",
+        )
+        os.makedirs(raport_dir, exist_ok=True)  # Create directory if it does not exist
+        raport_file = os.path.join(raport_dir, f"aruco_{name}.json")
+        with open(raport_file, "w") as f:
+            json.dump([self.to_dict(x) for x in lst], f)
+
+    def to_dict(self, obj: TransformStamped) -> dict:
+        """Converts a TransformStamped object to a dictionary."""
+        return {
+            "header": {
+                "stamp": {
+                    "sec": obj.header.stamp.sec,
+                    "nanosec": obj.header.stamp.nanosec,
+                },
+                "frame_id": obj.header.frame_id,
+            },
+            "child_frame_id": obj.child_frame_id,
+            "transform": {
+                "translation": {
+                    "x": obj.transform.translation.x,
+                    "y": obj.transform.translation.y,
+                    "z": obj.transform.translation.z,
+                },
+                "rotation": {
+                    "x": obj.transform.rotation.x,
+                    "y": obj.transform.rotation.y,
+                    "z": obj.transform.rotation.z,
+                    "w": obj.transform.rotation.w,
+                },
+            },
+        }
+
+    def timer_callback(self):
+        try:
+            self.get_logger().info("Saving current informations\n" * 5)
+            for k, v in self.mean_value_of_aruco_ekf.items():
+                lst = self.arucos_found_cnt10[k].copy()
+                v.child_frame_id += "mean"
+                self.save_info_to_file(lst, v, str(k))
+
+        except Exception as e:
+            self.get_logger().info(f"{e}")
 
     def img_callback(self, msg):
         try:
@@ -186,7 +241,8 @@ class ArucoDetector(Node):
                         (0, 0, 255),
                         2,
                         cv2.LINE_AA,
-                    ) """
+                    ) 
+                    """
                     try:
                         # message do testow tylko
                         """message = String()
@@ -245,8 +301,6 @@ class ArucoDetector(Node):
                         aruco_ekf.transform.rotation.y = combined_quaternion[2]
                         aruco_ekf.transform.rotation.z = combined_quaternion[3]
 
-                        self.aruco_broadcaster.sendTransform(aruco_ekf)
-
                         j = self.pictures_counter.get(ids[0], 0)
                         if j < 10:
                             self.pictures_counter[ids[0]] = j + 1
@@ -260,9 +314,67 @@ class ArucoDetector(Node):
                                     f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{j}.jpg",
                                 )
                                 cv2.imwrite(image_file, frame2)
+
+                                if ids[0] in self.arucos_found_cnt10:
+                                    self.arucos_found_cnt10[ids[0]].append(aruco_ekf)
+                                else:
+                                    self.arucos_found_cnt10[ids[0]] = list()
                                 time.sleep(0.1)
+
                             except Exception as e:
                                 self.get_logger().info(f"{e}")
+
+                        # If try with saving pictures go down mean value equals value from actual frame
+                        self.mean_value_of_aruco_ekf[ids[0]] = aruco_ekf
+                        try:
+                            # mean value of arucos_found
+                            tx = 0
+                            ty = 0
+                            tz = 0
+                            rw = 0
+                            rx = 0
+                            ry = 0
+                            rz = 0
+                            how_many = len(self.arucos_found_cnt10[ids[0]])
+                            for i in range(how_many):
+                                ekf = self.arucos_found_cnt10[ids[0]][i]
+                                tx += float(ekf.transform.translation.x)
+                                ty += float(ekf.transform.translation.y)
+                                tz += float(ekf.transform.translation.z)
+                                rw += float(ekf.transform.rotation.w)
+                                rx += float(ekf.transform.rotation.x)
+                                ry += float(ekf.transform.rotation.y)
+                                rz += float(ekf.transform.rotation.z)
+
+                            self.mean_value_of_aruco_ekf[
+                                ids[0]
+                            ].transform.translation.x = (tx / how_many)
+                            self.mean_value_of_aruco_ekf[
+                                ids[0]
+                            ].transform.translation.y = (ty / how_many)
+                            self.mean_value_of_aruco_ekf[
+                                ids[0]
+                            ].transform.translation.z = (tz / how_many)
+                            self.mean_value_of_aruco_ekf[
+                                ids[0]
+                            ].transform.rotation.w = (rw / how_many)
+                            self.mean_value_of_aruco_ekf[
+                                ids[0]
+                            ].transform.rotation.x = (rx / how_many)
+                            self.mean_value_of_aruco_ekf[
+                                ids[0]
+                            ].transform.rotation.y = (ry / how_many)
+                            self.mean_value_of_aruco_ekf[
+                                ids[0]
+                            ].transform.rotation.z = (rz / how_many)
+
+                        except:
+                            self.mean_value_of_aruco_ekf[ids[0]] = aruco_ekf
+                            pass
+
+                        self.aruco_broadcaster.sendTransform(
+                            self.mean_value_of_aruco_ekf[ids[0]]
+                        )
 
                     except Exception as e:
                         self.get_logger().info(f"muj Publisher error: {e}")
