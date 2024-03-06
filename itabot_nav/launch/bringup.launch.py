@@ -17,6 +17,7 @@ from nav2_common.launch import RewrittenYaml
 from launch.actions import TimerAction
 from launch.actions import ExecuteProcess
 
+
 home_dir = os.environ["HOME"]
 map_file = os.path.join(
     home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/map/map"
@@ -30,7 +31,20 @@ SAVING_TIME_SECONDS = 10  # if this parameter is changed, please change it also 
 
 def generate_launch_description():
     # configuration
+    ekf_config = PathJoinSubstitution([itabot_nav, "config", "ekf.yaml"])
 
+    robot_localization_node = Node(
+        package="robot_localization",
+        executable="ekf_node",
+        output="screen",
+        parameters=[ekf_config],
+        remappings=[
+            ("/diagnostics", "diagnostics"),
+            ("/tf", "tf"),
+            ("/tf_static", "tf_static"),
+        ],
+        namespace=namespace,
+    )
     nav2_bringup_dir = get_package_share_directory("nav2_bringup")
     nav2_bringup_launch_dir = os.path.join(nav2_bringup_dir, "launch")
 
@@ -38,14 +52,12 @@ def generate_launch_description():
     itabot_nav_launch_dir = os.path.join(itabot_nav_dir, "launch")
 
     params_file = os.path.join(itabot_nav_dir, "config", "rosbot_autonomy.yaml")
-    ekf_config = os.path.join(itabot_nav_dir, "config", "ekf.yaml")
 
     explore_lite_launch = os.path.join(
         get_package_share_directory("explore_lite"), "launch", "explore.launch.py"
     )
 
     use_sim_time = LaunchConfiguration("use_sim_time")
-    namespace = LaunchConfiguration("namespace")
     autostart = "True"
     use_respawn = "False"
     log_level = "Info"
@@ -147,19 +159,6 @@ def generate_launch_description():
                         cmd=["python3", minimal_publisher_path], output="screen"
                     ),
                 ],
-            ),
-            # Add robot_localization_node here
-            Node(
-                package="robot_localization",
-                executable="ekf_node",
-                output="screen",
-                parameters=[ekf_config],
-                remappings=[
-                    ("/diagnostics", "diagnostics"),
-                    ("/tf", "tf"),
-                    ("/tf_static", "tf_static"),
-                ],
-                namespace=namespace,
             ),
         ]
     )
