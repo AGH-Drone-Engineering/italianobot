@@ -216,7 +216,7 @@ class ArucoDetector(Node):
                         aruco_ekf.transform.translation.z = -tVec[i][0][1]
 
                         camera_color_frame_to_map = self.tf_buffer.lookup_transform(
-                            "map", "orbbec_astra_link", rclpy.time.Time()
+                            "map", "camera_color_frame", rclpy.time.Time()
                         )
 
                         aruco_ekf.transform.translation.x += (
