@@ -46,6 +46,8 @@ class ArucoDetector(Node):
             qos_profile,
         )
 
+        self.timer = self.create_timer(5, self.timer_callback)
+
         # Pictures saver:
         self.pictures_counter = dict()
 
@@ -110,17 +112,51 @@ class ArucoDetector(Node):
     ):
         lst.append(mean)
         home_dir = os.environ["HOME"]
-        raport_file = os.path.join(
+        raport_dir = os.path.join(
             home_dir,
-            f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/raports/{name}.json",
+            "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/raports",
         )
-        with open(raport_file) as f:
-            json.dump(lst, f)
+        os.makedirs(raport_dir, exist_ok=True)  # Create directory if it does not exist
+        raport_file = os.path.join(raport_dir, f"aruco_{name}.json")
+        with open(raport_file, "w") as f:
+            json.dump([self.to_dict(x) for x in lst], f)
 
-    def __del__(self):
-        for mean_, lst_ in zip(self.mean_value_of_aruco_ekf, self.arucos_found_cnt10):
-            name = mean_.child_frame_id
-            self.save_info_to_file(mean_, lst_, str(name))
+    def to_dict(self, obj: TransformStamped) -> dict:
+        """Converts a TransformStamped object to a dictionary."""
+        return {
+            "header": {
+                "stamp": {
+                    "sec": obj.header.stamp.sec,
+                    "nanosec": obj.header.stamp.nanosec,
+                },
+                "frame_id": obj.header.frame_id,
+            },
+            "child_frame_id": obj.child_frame_id,
+            "transform": {
+                "translation": {
+                    "x": obj.transform.translation.x,
+                    "y": obj.transform.translation.y,
+                    "z": obj.transform.translation.z,
+                },
+                "rotation": {
+                    "x": obj.transform.rotation.x,
+                    "y": obj.transform.rotation.y,
+                    "z": obj.transform.rotation.z,
+                    "w": obj.transform.rotation.w,
+                },
+            },
+        }
+
+    def timer_callback(self):
+        try:
+            self.get_logger().info("Saving current informations\n" * 5)
+            for k, v in self.mean_value_of_aruco_ekf.items():
+                lst = self.arucos_found_cnt10[k].copy()
+                v.child_frame_id += "mean"
+                self.save_info_to_file(lst, v, str(k))
+
+        except Exception as e:
+            self.get_logger().info(f"{e}")
 
     def img_callback(self, msg):
 
@@ -319,9 +355,6 @@ class ArucoDetector(Node):
                             self.mean_value_of_aruco_ekf[ids[0]] = aruco_ekf
                             pass
 
-                        self.mean_value_of_aruco_ekf.child_frame_id = (
-                            f"aruco_marker_{ids[0]}_mean_val"
-                        )
                         self.aruco_broadcaster.sendTransform(
                             self.mean_value_of_aruco_ekf[ids[0]]
                         )
@@ -343,7 +376,6 @@ def main(args=None):
     aruco_detector = ArucoDetector()
     rclpy.spin(aruco_detector)
     aruco_detector.destroy_node()
-    del aruco_detector
     rclpy.shutdown()
 
 

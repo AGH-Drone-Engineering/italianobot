@@ -67,7 +67,7 @@ class GoalPublisher(Node):
         # points publisher:
         super().__init__("goal_publisher")
         self.publisher_ = self.create_publisher(PoseStamped, "goal_pose", 10)
-        timer_period = 3  # sekundy
+        timer_period = 0.5  # sekundy
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
         # pose with covariance subscriber (unnecessary but just for safety if tf fails)
