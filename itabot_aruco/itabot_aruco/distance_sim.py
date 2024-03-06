@@ -122,7 +122,7 @@ class ArucoDetector(Node):
 
                     rVec2 = rVec.copy()
                     self.rviz2_axes(rVec2, i)
-
+                    """
                     cv2.polylines(
                         frame,
                         [corners.astype(np.int32)],
@@ -171,6 +171,7 @@ class ArucoDetector(Node):
                         2,
                         cv2.LINE_AA,
                     )
+                    """
                     try:
                         # message do testow tylko
                         """message = String()
@@ -186,7 +187,6 @@ class ArucoDetector(Node):
                         # Convert rotation matrix to quaternion
                         quaternion = tf_trans.quaternion_from_matrix(rVec_matrix)
 
-                        
                         # TF_broadcast:
                         aruco_ekf = TransformStamped()
                         aruco_ekf.header.stamp = self.get_clock().now().to_msg()
@@ -252,10 +252,12 @@ class ArucoDetector(Node):
                     except Exception as e:
                         self.get_logger().info(f"muj Publisher error: {e}")
 
+            """
             cv2.imshow("frame", frame)
             key = cv2.waitKey(1)
             if key == ord("q"):
                 cv2.destroyAllWindows()
+            """
         except CvBridgeError as e:
             self.get_logger().error("Could not convert image: %s" % e)
 
