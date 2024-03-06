@@ -56,7 +56,7 @@ class GoalPublisher(Node):
         init_pose = [X_POSE, Y_POSE]
 
         # set the parameters of algorithm (how far from wall the goal point can be placed and how far from another goal point):
-        MARGIN = 10  # minimal spacing between points
+        MARGIN = 50  # minimal spacing between points
         WALL_DET = 5  # minimal spacing between rosbot and wall
 
         # get list of goal points:
