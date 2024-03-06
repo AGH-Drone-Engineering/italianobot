@@ -14,6 +14,7 @@ import tf2_ros
 import time
 import os
 from tf_transformations import quaternion_multiply
+import json
 
 
 class ArucoDetector(Node):
@@ -103,6 +104,23 @@ class ArucoDetector(Node):
         R_rotated = np.dot(R_rotated, R_x)
         rVec_rotated, _ = cv2.Rodrigues(R_rotated)
         rVec[i] = rVec_rotated.T
+
+    def save_info_to_file(
+        self, lst: list[TransformStamped], mean: TransformStamped, name: str
+    ):
+        lst.append(mean)
+        home_dir = os.environ["HOME"]
+        raport_file = os.path.join(
+            home_dir,
+            f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/raports/{name}.json",
+        )
+        with open(raport_file) as f:
+            json.dump(lst, f)
+
+    def __del__(self):
+        for mean_, lst_ in zip(self.mean_value_of_aruco_ekf, self.arucos_found_cnt10):
+            name = mean_.child_frame_id
+            self.save_info_to_file(mean_, lst_, str(name))
 
     def img_callback(self, msg):
 
@@ -237,7 +255,6 @@ class ArucoDetector(Node):
 
                             # saving picture of frame
                             try:
-
                                 home_dir = os.environ["HOME"]
                                 image_file = os.path.join(
                                     home_dir,
@@ -302,10 +319,12 @@ class ArucoDetector(Node):
                             self.mean_value_of_aruco_ekf[ids[0]] = aruco_ekf
                             pass
 
+                        self.mean_value_of_aruco_ekf.child_frame_id = (
+                            f"aruco_marker_{ids[0]}_mean_val"
+                        )
                         self.aruco_broadcaster.sendTransform(
                             self.mean_value_of_aruco_ekf[ids[0]]
                         )
-
                     except Exception as e:
                         self.get_logger().info(f"muj Publisher error: {e}")
 
@@ -324,6 +343,7 @@ def main(args=None):
     aruco_detector = ArucoDetector()
     rclpy.spin(aruco_detector)
     aruco_detector.destroy_node()
+    del aruco_detector
     rclpy.shutdown()
 
 
