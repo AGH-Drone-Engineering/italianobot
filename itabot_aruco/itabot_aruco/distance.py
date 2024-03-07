@@ -315,7 +315,7 @@ class ArucoDetector(Node):
                                 home_dir = os.environ["HOME"]
                                 image_dir = os.path.join(
                                     home_dir,
-                                    "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/raports",
+                                    "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures",
                                 )
                                 os.makedirs(
                                     image_dir, exist_ok=True

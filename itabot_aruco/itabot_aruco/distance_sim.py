@@ -292,9 +292,15 @@ class ArucoDetector(Node):
                             # saving picture of frame
                             try:
                                 home_dir = os.environ["HOME"]
-                                image_file = os.path.join(
+                                image_dir = os.path.join(
                                     home_dir,
-                                    f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{j}.jpg",
+                                    "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures",
+                                )
+                                os.makedirs(
+                                    image_dir, exist_ok=True
+                                )  # Create directory if it does not exist
+                                image_file = os.path.join(
+                                    image_dir, f"Aruco{ids[0]}_photo_nr_{j}.jpg"
                                 )
                                 cv2.imwrite(image_file, frame2)
 
