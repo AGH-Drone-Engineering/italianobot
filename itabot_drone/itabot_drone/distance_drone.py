@@ -46,8 +46,6 @@ class ArucoDetector(Node):
         #     qos_profile,
         # )
 
-        self.timer = self.create_timer(5, self.timer_callback)
-
         # Aruco position publishers:
 
         # pose with covariance:
@@ -64,7 +62,7 @@ class ArucoDetector(Node):
         self.distance_pub = self.create_publisher(String, "/distance_drone", 10)
 
         # Aruco code parameters:
-        self.marker_dict = aruco.Dictionary_get(aruco.DICT_4x4_50)
+        self.marker_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
         self.param_markers = aruco.DetectorParameters_create()
 
         # Camera calibration from file:
@@ -73,7 +71,7 @@ class ArucoDetector(Node):
         home_dir = os.environ["HOME"]
 
         self.calib_data_path = os.path.join(
-            home_dir, "ros2_ws/src/itabot_drone/calib_data/MultiMatrix.npz"
+            home_dir, "ros2_ws/src/italianobot/itabot_drone/calib_data/MultiMatrix.npz"
         )
         self.calib_data = np.load(self.calib_data_path)
         self.cam_mat = self.calib_data["camMatrix"]

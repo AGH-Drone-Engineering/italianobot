@@ -20,7 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "camera = itabot_drone.image_publisher:main",
-            "distance_drone = itabot_drone.distance_drone.py",
+            "distance_drone = itabot_drone.distance_drone:main",
             "camera_capture = itabot_drone.capture_calibration_images_ros2:main",
         ],
     },

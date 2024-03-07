@@ -81,8 +81,10 @@ class ArucoDetector(Node):
         # Camera calibration from file:
 
         """ # self.calib_data_path = "../calib_data/MultiMatrix.npz"
-        self.calib_data_path = (
-            "/home/husarion/ros2_ws/src/itabot_aruco/calib_data/MultiMatrix.npz"
+
+        home_dir = os.environ["HOME"]
+        self.calib_data_path = os.path.join(
+            home_dir, "ros2_ws/src/italianobot/itabot_aruco/calib_data/MultiMatrix.npz"
         )
         self.calib_data = np.load(self.calib_data_path)
         self.cam_mat = self.calib_data["camMatrix"]
