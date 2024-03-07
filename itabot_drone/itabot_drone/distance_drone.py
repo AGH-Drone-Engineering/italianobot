@@ -174,9 +174,14 @@ class ArucoDetector(Node):
                                 4 / 100,
                                 4,
                             )
+                            # x,y,z after rviz2 translation
                             cv2.putText(
                                 frame,
-                                f"x:{round(tVec[i][0][2],1)} y:{round(-tVec[i][0][0],1)} z: {round(-tVec[i][0][1],1)} ",
+                                (
+                                    ("Landing" if ids[0] == large_code_id else "Rosbot")
+                                    + " "
+                                    + f"x:{round(tVec[i][0][2],1)} y:{round(-tVec[i][0][0],1)} z: {round(-tVec[i][0][1],1)}"
+                                ),
                                 tuple(top_right),
                                 cv2.FONT_HERSHEY_PLAIN,
                                 1.3,
@@ -184,6 +189,7 @@ class ArucoDetector(Node):
                                 2,
                                 cv2.LINE_AA,
                             )
+                            # actual camera x,y:
                             cv2.putText(
                                 frame,
                                 f"x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)} ",
@@ -217,7 +223,11 @@ class ArucoDetector(Node):
                                 aruco_ekf.header.stamp = self.get_clock().now().to_msg()
 
                                 aruco_ekf.header.frame_id = "map"
-                                aruco_ekf.child_frame_id = f"drone_code_{ids[0]}"
+                                aruco_ekf.child_frame_id = (
+                                    "land_position_position"
+                                    if ids[0] == large_code_id
+                                    else "rosbot_aruco_position"
+                                )
 
                                 aruco_ekf.transform.translation.x = tVec[i][0][2]
 

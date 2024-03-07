@@ -224,6 +224,7 @@ class ArucoDetector(Node):
                         4 / 100,
                         4,
                     )
+                    # x,y,z after rviz2 translation
                     cv2.putText(
                         frame,
                         f"x:{round(tVec[i][0][2],1)} y:{round(-tVec[i][0][0],1)} z: {round(-tVec[i][0][1],1)} ",
@@ -234,6 +235,7 @@ class ArucoDetector(Node):
                         2,
                         cv2.LINE_AA,
                     )
+                    # actual camera x,y:
                     cv2.putText(
                         frame,
                         f"x:{round(tVec[i][0][0],1)} y: {round(tVec[i][0][1],1)} ",
