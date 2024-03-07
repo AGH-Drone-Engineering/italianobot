@@ -48,9 +48,6 @@ class ArucoDetector(Node):
 
         self.timer = self.create_timer(5, self.timer_callback)
 
-        # Pictures saver:
-        self.pictures_counter = dict()
-
         # Aruco position publishers:
 
         # pose with covariance:
@@ -58,15 +55,13 @@ class ArucoDetector(Node):
 
         # tf broadcaster:
         self.aruco_broadcaster = tf2_ros.TransformBroadcaster(self)
-        self.arucos_found_cnt10 = dict()
-        self.mean_value_of_aruco_ekf = dict()
 
         # tf buffer and listener:
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self)
 
         # do testow awaryjnie (potem do usuniecia):
-        self.distance_pub = self.create_publisher(String, "/distance", 10)
+        self.distance_pub = self.create_publisher(String, "/distance_drone", 10)
 
         # Aruco code parameters:
         self.marker_dict = aruco.Dictionary_get(aruco.DICT_4x4_50)
@@ -83,9 +78,8 @@ class ArucoDetector(Node):
         self.calib_data = np.load(self.calib_data_path)
         self.cam_mat = self.calib_data["camMatrix"]
         self.dist_coef = self.calib_data["distCoef"]
-        # unnecessary:
-        # self.r_vectors = self.calib_data["rVector"]
-        # self.t_vectors = self.calib_data["tVector"]
+        self.r_vectors = self.calib_data["rVector"]
+        self.t_vectors = self.calib_data["tVector"]
 
         """ self.cam_mat = np.zeros((3, 3))
         self.dist_coef = np.zeros(5)
@@ -267,83 +261,7 @@ class ArucoDetector(Node):
                                 aruco_ekf.transform.rotation.y = combined_quaternion[2]
                                 aruco_ekf.transform.rotation.z = combined_quaternion[3]
 
-                                j = self.pictures_counter.get(ids[0], 0)
-                                if j < 10:
-                                    self.pictures_counter[ids[0]] = j + 1
-
-                                    # saving picture of frame
-                                    try:
-
-                                        home_dir = os.environ["HOME"]
-                                        image_file = os.path.join(
-                                            home_dir,
-                                            f"ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/pictures/Aruco{ids[0]}_photo_nr_{j}.jpg",
-                                        )
-                                        cv2.imwrite(image_file, frame2)
-
-                                        if ids[0] in self.arucos_found_cnt10:
-                                            self.arucos_found_cnt10[ids[0]].append(
-                                                aruco_ekf
-                                            )
-                                        else:
-                                            self.arucos_found_cnt10[ids[0]] = list()
-                                        time.sleep(0.1)
-
-                                    except Exception as e:
-                                        self.get_logger().info(f"{e}")
-
-                                # If try with saving pictures go down mean value equals value from actual frame
-                                self.mean_value_of_aruco_ekf[ids[0]] = aruco_ekf
-                                try:
-                                    # mean value of arucos_found
-                                    tx = 0
-                                    ty = 0
-                                    tz = 0
-                                    rw = 0
-                                    rx = 0
-                                    ry = 0
-                                    rz = 0
-                                    how_many = len(self.arucos_found_cnt10[ids[0]])
-                                    for i in range(how_many):
-                                        ekf = self.arucos_found_cnt10[ids[0]][i]
-                                        tx += float(ekf.transform.translation.x)
-                                        ty += float(ekf.transform.translation.y)
-                                        tz += float(ekf.transform.translation.z)
-                                        rw += float(ekf.transform.rotation.w)
-                                        rx += float(ekf.transform.rotation.x)
-                                        ry += float(ekf.transform.rotation.y)
-                                        rz += float(ekf.transform.rotation.z)
-
-                                    self.mean_value_of_aruco_ekf[
-                                        ids[0]
-                                    ].transform.translation.x = (tx / how_many)
-                                    self.mean_value_of_aruco_ekf[
-                                        ids[0]
-                                    ].transform.translation.y = (ty / how_many)
-                                    self.mean_value_of_aruco_ekf[
-                                        ids[0]
-                                    ].transform.translation.z = (tz / how_many)
-                                    self.mean_value_of_aruco_ekf[
-                                        ids[0]
-                                    ].transform.rotation.w = (rw / how_many)
-                                    self.mean_value_of_aruco_ekf[
-                                        ids[0]
-                                    ].transform.rotation.x = (rx / how_many)
-                                    self.mean_value_of_aruco_ekf[
-                                        ids[0]
-                                    ].transform.rotation.y = (ry / how_many)
-                                    self.mean_value_of_aruco_ekf[
-                                        ids[0]
-                                    ].transform.rotation.z = (rz / how_many)
-
-                                except:
-                                    self.mean_value_of_aruco_ekf[ids[0]] = aruco_ekf
-                                    pass
-
-                                self.aruco_broadcaster.sendTransform(
-                                    self.mean_value_of_aruco_ekf[ids[0]]
-                                )
-
+                                self.aruco_broadcaster.sendTransform(self.aruco_ekf)
                             except Exception as e:
                                 self.get_logger().info(f"muj Publisher error: {e}")
 
