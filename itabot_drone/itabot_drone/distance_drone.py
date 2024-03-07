@@ -11,10 +11,8 @@ from std_msgs.msg import String
 from geometry_msgs.msg import TransformStamped
 import tf_transformations as tf_trans
 import tf2_ros
-import time
 import os
 from tf_transformations import quaternion_multiply
-import json
 
 
 class ArucoDetector(Node):
