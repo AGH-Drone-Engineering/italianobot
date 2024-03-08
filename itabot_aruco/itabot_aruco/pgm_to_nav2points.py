@@ -36,8 +36,8 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                     for gp in goal_points[-4 * width // MARGIN :]
                 ):
 
-                    real_x = x * resolution + init_pose[0]
-                    real_y = y * resolution + init_pose[1]
+                    real_x = x * resolution + init_pose[0] 
+                    real_y = y * resolution + init_pose[1] + height * resolution
                     rotation = [
                         {"ow": 1.0, "ox": 0.0, "oy": 0.0, "oz": 0.0},
                         {"ow": 0.7, "ox": 0.0, "oy": 0.0, "oz": -0.7},

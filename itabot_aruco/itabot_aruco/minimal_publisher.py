@@ -51,9 +51,8 @@ class GoalPublisher(Node):
 
         # Turbo ważny parametr:
         # DO ZMIANY NA TAKI JAK NA ZAWODACH (POZYCJA POCZĄTKOWA)
-        X_POSE = -7.92
-        Y_POSE = 1.3
-        init_pose = [X_POSE, Y_POSE]
+        
+        init_pose = map_data["origin"][:2]
 
         # set the parameters of algorithm (how far from wall the goal point can be placed and how far from another goal point):
         MARGIN = 50  # minimal spacing between points
