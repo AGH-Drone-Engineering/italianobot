@@ -31,13 +31,15 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                 if len(goal_points) == 0 or all(
                     np.abs(gp["px"] - x * resolution - init_pose[0])
                     > MARGIN * resolution
-                    or np.abs(gp["py"] - y * resolution - init_pose[1])
+                    or np.abs(
+                        gp["py"] + y * resolution - init_pose[1] - height * resolution
+                    )
                     > MARGIN * resolution
                     for gp in goal_points[-4 * width // MARGIN :]
                 ):
 
-                    real_x = x * resolution + init_pose[0] 
-                    real_y = y * resolution + init_pose[1] + height * resolution
+                    real_x = x * resolution + init_pose[0]
+                    real_y = -y * resolution + init_pose[1] + height * resolution
                     rotation = [
                         {"ow": 1.0, "ox": 0.0, "oy": 0.0, "oz": 0.0},
                         {"ow": 0.7, "ox": 0.0, "oy": 0.0, "oz": -0.7},
@@ -60,6 +62,7 @@ def calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET):
                     # Saving map with goal points
                     # Only for testing the algorithm
                     out_put_img_array[y][x] = 150
+                    print(x, y)
     im = Image.fromarray(out_put_img_array)
     directory = os.path.dirname(map_file)
     points_file = os.path.join(directory, "points.pgm")
@@ -77,6 +80,6 @@ map_file = os.path.join(
 map_data = load_map_data(yaml_file)
 resolution = map_data["resolution"]
 init_pose = map_data["origin"][:2]
-MARGIN = 20  # minimal spacing between points
+MARGIN = 37  # minimal spacing between points
 WALL_DET = 5  # minimal spacing between rosbot and wall
 goal_points = calculate_goal_points(map_file, resolution, init_pose, MARGIN, WALL_DET)

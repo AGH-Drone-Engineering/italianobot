@@ -14,7 +14,7 @@ import sys
 import os
 import re
 import time
-
+import json
 
 home_dir = os.environ["HOME"]
 pgm_file = os.path.join(home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco")
@@ -48,19 +48,15 @@ class GoalPublisher(Node):
         )
         map_data = nav2p.load_map_data(yaml_file)
         resolution = map_data["resolution"]
-
-        # Turbo ważny parametr:
-        # DO ZMIANY NA TAKI JAK NA ZAWODACH (POZYCJA POCZĄTKOWA)
-        
-        init_pose = map_data["origin"][:2]
+        self.init_pose = map_data["origin"][:2]
 
         # set the parameters of algorithm (how far from wall the goal point can be placed and how far from another goal point):
-        MARGIN = 50  # minimal spacing between points
+        MARGIN = 37  # minimal spacing between points
         WALL_DET = 5  # minimal spacing between rosbot and wall
 
         # get list of goal points:
         self.points = nav2p.calculate_goal_points(
-            map_file, resolution, init_pose, MARGIN, WALL_DET
+            map_file, resolution, self.init_pose, MARGIN, WALL_DET
         )
 
         # points publisher:
@@ -90,6 +86,10 @@ class GoalPublisher(Node):
         # actual goal point counter (= len(self.points) means that he will go to the base (0,0,0) because of IndexError)
         self.i = 0
 
+        # parameter changing when real aruco positions saved
+        self.raports_dir = os.path.join(
+            home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/raports"
+        )
         # TransformListener
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -137,10 +137,10 @@ class GoalPublisher(Node):
                 arucos_found = self.get_found_arucos()
                 for aruco in arucos_found:
                     if aruco in self.arucos_to_find:
-                        self.get_logger().info(f"Aruco found: {aruco}")
+                        self.get_logger().info(f"Aruco found: {aruco}\n" * 10)
                         self.arucos_to_find.remove(aruco)
             except Exception as e:
-                self.get_logger().info(f"Aruco_to_find remover error {e}")
+                self.get_logger().info(f"Aruco_to_find remover error {e}\n" * 10)
 
             if len(self.arucos_to_find) == 0:
                 self.i = len(self.points)
@@ -184,7 +184,34 @@ class GoalPublisher(Node):
 
             self.publisher_.publish(msg)
             self.get_logger().info("Returning to the base")
+            try:
+                self.get_logger().info("Trying to convert aruco axes")
+                all_data = list()
+                for filename in os.listdir(self.raports_dir):
+                    if filename.endswith("json"):
+                        json_path = os.path.join(self.raports_dir, filename)
 
+                        with open(json_path, "r") as f:
+                            data = json.load(f)
+                            if "mean" in data["child_frame_id"]:
+                                data["transform"]["translation"]["x"] -= self.init_pose[
+                                    0
+                                ]
+                                data["transform"]["translation"]["y"] -= self.init_pose[
+                                    1
+                                ]
+                                all_data.append(data)
+
+                codes_real_position_json = os.path.join(
+                    self.raports_dir, "codes_real_position.json"
+                )
+                if not os.path.exists(codes_real_position_json):
+                    with open(codes_real_position_json, "w") as f:
+                        json.dump(all_data, f)
+
+                self.get_logger().info("JSON SAVED AS codes_real_position.json\n" * 5)
+            except:
+                self.get_logger().info("Fail to save real aruco pose")
         except Exception as e:
             self.get_logger().info(f"{e}")
 
