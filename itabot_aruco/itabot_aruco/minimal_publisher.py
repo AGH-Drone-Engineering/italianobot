@@ -30,7 +30,7 @@ class GoalPublisher(Node):
         self.start = time.time()
 
         # list of codes to find:
-        self.arucos_to_find = ["55"]
+        self.arucos_to_find = ["241", "756"]
 
         # stop exploration:
         try:
@@ -312,7 +312,7 @@ class GoalPublisher(Node):
                         self.points[self.i]["oy"],
                         margin,
                     )
-                    and self.differreachedent(
+                    and self.different(
                         self.actual_position_pose["oz"],
                         self.points[self.i]["oz"],
                         margin,
