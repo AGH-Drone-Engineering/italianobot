@@ -168,10 +168,9 @@ class ArucoDetector(Node):
             self.get_logger().info("Saving current informations\n" * 5)
             for k, v in self.mean_value_of_aruco_ekf.items():
                 lst = self.arucos_found_cnt10[k].copy()
-                v_ = v.copy()
-                if "mean" not in v_.child_fram_id:
-                    v_.child_frame_id += "mean"
-                self.save_info_to_file(lst, v_, str(k))
+                if "mean" not in v.child_frame_id:
+                    v.child_frame_id += "mean"
+                self.save_info_to_file(lst, v, str(k))
 
         except Exception as e:
             self.get_logger().info(f"{e}")
