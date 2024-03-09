@@ -64,7 +64,10 @@ class GoalPublisher(Node):
         self.publisher_ = self.create_publisher(PoseStamped, "goal_pose", 10)
         timer_period = 0.5  # sekundy
         self.timer = self.create_timer(timer_period, self.timer_callback)
-
+        timer_rap_n_img = 60
+        self.timer_rap_n_img = self.create_timer(
+            timer_rap_n_img, self.timer_rap_n_img_callback
+        )
         # pose with covariance subscriber (unnecessary but just for safety if tf fails)
         self.subscription = self.create_subscription(
             PoseWithCovarianceStamped, "pose", self.position_sub, 10
@@ -309,7 +312,7 @@ class GoalPublisher(Node):
                         self.points[self.i]["oy"],
                         margin,
                     )
-                    and self.different(
+                    and self.differreachedent(
                         self.actual_position_pose["oz"],
                         self.points[self.i]["oz"],
                         margin,
@@ -320,6 +323,18 @@ class GoalPublisher(Node):
                 self.get_logger().info("All goals reached")
             except Exception as e:
                 self.get_logger().info(f"Position diff error {e}")
+
+    def timer_rap_n_img_callback(self):
+        try:
+            self.get_logger().info("Pobieranie informacji\n" * 5)
+
+            home_dir = os.environ["HOME"]
+            scp_file = os.path.join(
+                home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco/scp.sh"
+            )
+            os.system(f". {scp_file}")
+        except Exception as e:
+            self.get_logger().info(f"{e}")
 
 
 def main(args=None):
