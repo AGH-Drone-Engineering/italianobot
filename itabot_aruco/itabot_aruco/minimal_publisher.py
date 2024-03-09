@@ -193,14 +193,15 @@ class GoalPublisher(Node):
 
                         with open(json_path, "r") as f:
                             data = json.load(f)
-                            if "mean" in data["child_frame_id"]:
-                                data["transform"]["translation"]["x"] -= self.init_pose[
-                                    0
-                                ]
-                                data["transform"]["translation"]["y"] -= self.init_pose[
-                                    1
-                                ]
-                                all_data.append(data)
+                            for item in data:
+                                if "mean" in item["child_frame_id"]:
+                                    item["transform"]["translation"][
+                                        "x"
+                                    ] -= self.init_pose[0]
+                                    item["transform"]["translation"][
+                                        "y"
+                                    ] -= self.init_pose[1]
+                                    all_data.append(item)
 
                 codes_real_position_json = os.path.join(
                     self.raports_dir, "codes_real_position.json"
@@ -210,8 +211,8 @@ class GoalPublisher(Node):
                         json.dump(all_data, f)
 
                 self.get_logger().info("JSON SAVED AS codes_real_position.json\n" * 5)
-            except:
-                self.get_logger().info("Fail to save real aruco pose")
+            except Exception as e:
+                self.get_logger().info(f"Fail to save real aruco pose {e}")
         except Exception as e:
             self.get_logger().info(f"{e}")
 
