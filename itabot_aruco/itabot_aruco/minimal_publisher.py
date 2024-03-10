@@ -15,6 +15,7 @@ import os
 import re
 import time
 import json
+import random
 
 home_dir = os.environ["HOME"]
 pgm_file = os.path.join(home_dir, "ros2_ws/src/italianobot/itabot_aruco/itabot_aruco")
@@ -52,13 +53,13 @@ class GoalPublisher(Node):
 
         # set the parameters of algorithm (how far from wall the goal point can be placed and how far from another goal point):
         MARGIN = 37  # minimal spacing between points
-        WALL_DET = 10  # minimal spacing between rosbot and wall
+        WALL_DET = 5  # minimal spacing between rosbot and wall
 
         # get list of goal points:
         self.points = nav2p.calculate_goal_points(
             map_file, resolution, self.init_pose, MARGIN, WALL_DET
         )
-
+        self.points_init = self.points[0]
         # points publisher:
         super().__init__("goal_publisher")
         self.publisher_ = self.create_publisher(PoseStamped, "goal_pose", 10)
@@ -153,6 +154,7 @@ class GoalPublisher(Node):
                 for i in range(10):
                     self.get_logger().info("Time didn't pass, aruco codes not found")
                 self.i = 0
+                random.shuffle(self.points)
 
         # Main logic of goal points setter:
         try:
@@ -177,13 +179,13 @@ class GoalPublisher(Node):
             msg = PoseStamped()
             msg.header.stamp.sec = 0
             msg.header.frame_id = "map"
-            msg.pose.position.x = 0.0
-            msg.pose.position.y = 0.0
-            msg.pose.position.z = 0.0
-            msg.pose.orientation.x = self.points[0]["ox"]
-            msg.pose.orientation.y = self.points[0]["oy"]
-            msg.pose.orientation.z = self.points[0]["oz"]
-            msg.pose.orientation.w = self.points[0]["ow"]
+            msg.pose.position.x = self.points_init["px"]  # 0.0
+            msg.pose.position.y = self.points_init["py"]  # 0.0
+            msg.pose.position.z = self.points_init["pz"]  # 0.0
+            msg.pose.orientation.x = self.points_init["ox"]  # self.points[0]["ox"]
+            msg.pose.orientation.y = self.points_init["oy"]  # self.points[0]["oy"]
+            msg.pose.orientation.z = self.points_init["oz"]  # self.points[0]["oz"]
+            msg.pose.orientation.w = self.points_init["ow"]  # self.points[0]["ow"]
 
             self.publisher_.publish(msg)
             self.get_logger().info("Returning to the base")
