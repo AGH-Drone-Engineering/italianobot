@@ -52,7 +52,7 @@ class GoalPublisher(Node):
 
         # set the parameters of algorithm (how far from wall the goal point can be placed and how far from another goal point):
         MARGIN = 37  # minimal spacing between points
-        WALL_DET = 5  # minimal spacing between rosbot and wall
+        WALL_DET = 10  # minimal spacing between rosbot and wall
 
         # get list of goal points:
         self.points = nav2p.calculate_goal_points(
