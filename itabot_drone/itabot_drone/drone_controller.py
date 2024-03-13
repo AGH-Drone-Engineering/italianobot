@@ -6,18 +6,18 @@ import time
 
 class DroneControl():
     def __init__(self):
-        self.the_connection = mavutil.mavlink_connection('udpin:localhost:14551')
+        self.the_connection = mavutil.mavlink_connection('udp:localhost:14550')
         self.the_connection.wait_heartbeat()
         print("Heartbeat from system (system %u component %u)" %
             (self.the_connection.target_system, self.the_connection.target_component))
 
     def establish_connection(self):
-        the_connection = mavutil.mavlink_connection('udpin:localhost:14551')
+        the_connection = mavutil.mavlink_connection('udp:localhost:14550')
         the_connection.wait_heartbeat()
         print("Heartbeat from system (system %u component %u)" %
             (the_connection.target_system, the_connection.target_component))   
 
-    def face_north(self):
+    def face_north(self) -> None:
         self.the_connection.mav.command_long_send(self.the_connection.target_system,self.the_connection.target_component, 
                                         mavutil.mavlink.MAV_CMD_CONDITION_YAW, 0,0,25,0,0,0,0,0)
             
@@ -60,3 +60,62 @@ class DroneControl():
         print(f"Takeoff ACK:  {takeoff_msg}")
 
         return takeoff_msg.result
+    def land(self, timeout: int = 10) -> int:
+
+    # Send a command to land
+        self.the_connection.mav.command_long_send(
+            self.the_connection.target_system, 
+            self.the_connection.target_component,
+            mavutil.mavlink.MAV_CMD_NAV_LAND, 
+            0, 0, 0, 0, 0, 0, 0, 0
+        )
+
+        # Wait for the acknowledgment
+        ack = self.the_connection.recv_match(type='COMMAND_ACK', blocking=True, timeout=timeout)
+        if ack is None:
+            print('No acknowledgment received within the timeout period.')
+            return None
+
+        return ack.result
+    
+    def arm(self):
+        #    def arm(mav_connection, arm_command):
+        # Wait for the first heartbeat
+        # This sets the system and component ID of remote system for the link
+        self.the_connection.wait_heartbeat()
+        print("Heartbeat from system (system %u component %u)" %
+            (self.the_connection.target_system, self.the_connection.target_component))
+
+        self.the_connection.mav.command_long_send(self.the_connection.target_system, self.the_connection.target_component,
+                                            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, arm_command, 0, 0, 0, 0, 0, 0)
+
+        msg = self.the_connection.recv_match(type='COMMAND_ACK', blocking=True)
+        print(msg)
+
+        # return the result of the ACK message
+        return msg.result
+
+
+
+
+
+drone_controller = DroneControl()
+
+drone_controller.takeoff()
+
+time.sleep(7)
+
+drone_controller.face_north()
+
+time.sleep(7)
+
+drone_controller.move(x = 0, y = 0.5                                                                                                                                                                                                                                                                                                                                                                , z = 0)
+time.sleep(7)
+drone_controller.land()
+
+
+"""while 1:
+    msg = the_connection.recv_match(
+        type='LOCAL_POSITION_NED', blocking=True)
+    print(msg)
+"""
