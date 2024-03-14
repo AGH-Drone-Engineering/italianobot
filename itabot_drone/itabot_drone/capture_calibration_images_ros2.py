@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import CompressedImage, Image
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
 CHESS_BOARD_DIM = (9, 6)
@@ -32,64 +32,69 @@ def detect_checker_board(image, grayImage, criteria, boardDimension):
 
     return image, ret
 
+gstreamer_pipe = "udpsrc port=5000 ! application/x-rtp,payload=96 ! rtph264depay ! h264parse ! queue ! vah264dec ! videoconvert ! video/x-raw,format=BGR ! appsink sync=false"
 
-class ImageSubscriber(Node):
+
+class ImageSubscriber:
+    # def __init__(self):
+    #     super().__init__('image_subscriber')
+    #     qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, history=HistoryPolicy.KEEP_LAST, depth=10)
+    #     self.subscription = self.create_subscription(
+    #         Image,
+    #         '/camera/drone/image',
+    #         self.image_callback,
+    #         qos_profile
+    #     )
+        # self.subscription  # prevent unused variable warning
     def __init__(self):
-        super().__init__('image_subscriber')
-        qos_profile = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT, history=HistoryPolicy.KEEP_LAST, depth=10)
-        self.subscription = self.create_subscription(
-            CompressedImage,
-            '/camera/color/image_raw/compressed',
-            self.image_callback,
-            qos_profile
-        )
-        self.subscription  # prevent unused variable warning
+        pass
+        
+    def image_callback(self):
+        self.cap = cv2.VideoCapture(gstreamer_pipe, cv2.CAP_GSTREAMER)
+        n =0
+        while 1:
+            
+            ret, frame = self.cap.read()
+            
+            
+            copyFrame = frame.copy()
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            print("debug1")
 
-    def image_callback(self, msg):
-        global n
-        np_arr = np.frombuffer(msg.data, np.uint8)
-        frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        copyFrame = frame.copy()
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            image, board_detected = detect_checker_board(frame, gray, criteria, CHESS_BOARD_DIM)
 
-        image, board_detected = detect_checker_board(frame, gray, criteria, CHESS_BOARD_DIM)
+            cv2.putText(
+                frame,
+                f"saved_img : {n}",
+                (30, 40),
+                cv2.FONT_HERSHEY_PLAIN,
+                1.4,
+                (0, 255, 0),
+                2,
+                cv2.LINE_AA,
+            )
+            cv2.imshow("frame", frame)
+            cv2.imshow("copyFrame", copyFrame)
 
-        cv2.putText(
-            frame,
-            f"saved_img : {n}",
-            (30, 40),
-            cv2.FONT_HERSHEY_PLAIN,
-            1.4,
-            (0, 255, 0),
-            2,
-            cv2.LINE_AA,
-        )
+            key = cv2.waitKey(1)
 
-        cv2.imshow("frame", frame)
-        cv2.imshow("copyFrame", copyFrame)
+            if key == ord("q"):
+                cv2.destroyAllWindows()
+                self.destroy_node()
+                rclpy.shutdown()
+            elif key == ord("s") and board_detected:
+                # storing the checker board image
+                cv2.imwrite(f"{image_dir_path}/photo{n}.png", copyFrame)
 
-        key = cv2.waitKey(1)
-
-        if key == ord("q"):
-            cv2.destroyAllWindows()
-            self.destroy_node()
-            rclpy.shutdown()
-        elif key == ord("s") and board_detected:
-            # storing the checker board image
-            cv2.imwrite(f"{image_dir_path}/image{n}.png", copyFrame)
-
-            print(f"saved image number {n}")
-            n += 1  # incrementing the image counter
+                print(f"saved image number {n}")
+                n += 1  # incrementing the image counter
 
 
 def main(args=None):
     global n
     n=0
-    rclpy.init(args=args)
     image_subscriber = ImageSubscriber()
-    rclpy.spin(image_subscriber)
-    image_subscriber.destroy_node()
-    rclpy.shutdown()
+    image_subscriber.image_callback()
 
 
 if __name__ == '__main__':

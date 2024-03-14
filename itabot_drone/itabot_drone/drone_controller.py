@@ -87,7 +87,7 @@ class DroneControl():
             (self.the_connection.target_system, self.the_connection.target_component))
 
         self.the_connection.mav.command_long_send(self.the_connection.target_system, self.the_connection.target_component,
-                                            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, arm_command, 0, 0, 0, 0, 0, 0)
+                                            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
 
         msg = self.the_connection.recv_match(type='COMMAND_ACK', blocking=True)
         print(msg)
@@ -99,19 +99,19 @@ class DroneControl():
 
 
 
-drone_controller = DroneControl()
+# drone_controller = DroneControl()
 
-drone_controller.takeoff()
+# drone_controller.takeoff()
 
-time.sleep(7)
+# time.sleep(7)
 
-drone_controller.face_north()
+# drone_controller.face_north()
 
-time.sleep(7)
+# time.sleep(7)
 
-drone_controller.move(x = 0, y = 0.5                                                                                                                                                                                                                                                                                                                                                                , z = 0)
-time.sleep(7)
-drone_controller.land()
+# drone_controller.move(x = 0, y = 0.5                                                                                                                                                                                                                                                                                                                                                                , z = 0)
+# time.sleep(7)
+# drone_controller.land()
 
 
 """while 1:
